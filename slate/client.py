@@ -1,8 +1,9 @@
 
 from __future__ import annotations
 
+import logging
 import random
-from typing import Dict, Optional, Union, MutableMapping, Type, Protocol
+from typing import Dict, MutableMapping, Optional, Protocol, Union
 
 import aiohttp
 import discord
@@ -11,6 +12,8 @@ from discord.ext import commands
 from .exceptions import NodeCreationError, NodeNotFound, NodesNotFound
 from .node import Node
 from .player import Player
+
+__log__ = logging.getLogger(__name__)
 
 
 class Client:
@@ -52,14 +55,14 @@ class Client:
 
     #
 
-    async def create_node(self, *, host: str, port: str, password: str, identifier: str) -> Node:
+    async def create_node(self, *, host: str, port: str, password: str, identifier: str, andesite: bool = False, lavalink_compatibility: bool = False) -> Node:
 
         await self.bot.wait_until_ready()
 
         if identifier in self.nodes.keys():
             raise NodeCreationError(f'Node with identifier \'{identifier}\' already exists.')
 
-        node = Node(client=self, host=host, port=port, password=password, identifier=identifier)
+        node = Node(client=self, host=host, port=port, password=password, identifier=identifier, andesite=andesite, lavalink_compatibility=lavalink_compatibility)
         await node.connect()
 
         return node

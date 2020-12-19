@@ -9,7 +9,7 @@ from urllib import parse
 import aiohttp
 
 from .exceptions import NodeConnectionError, NodeCreationError
-from .objects import Metadata, Pong, Stats
+from .objects import AndesiteStats, LavalinkStats, Metadata, Pong
 
 if TYPE_CHECKING:
     from .client import Client
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 class Node:
 
-    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, andesite: bool = False, lavalink_compatibility: bool = True) -> None:
+    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, andesite: bool = False, lavalink_compatibility: bool = False) -> None:
 
         self._client = client
         self._host = host
@@ -30,22 +30,23 @@ class Node:
 
         self._connection_id: Optional[int] = None
         self._metadata: Optional[Metadata] = None
+        self._andesite_stats: Optional[AndesiteStats] = None
 
-        self._stats: Optional[Stats] = None
+        self._lavalink_stats: Optional[LavalinkStats] = None
+
         self._players: Dict[int, Player] = {}
 
-        self.rest_url: str = f'https://{self.host}:{self.port}/'
-        self.ws_url: str = f'ws://{self.host}:{self.port}/{"websocket" if self.lavalink_compatibility else ""}'
+        self.rest_url: str = f'https://{self._host}:{self._port}/'
+        self.ws_url: str = f'ws://{self._host}:{self._port}/{"websocket" if not self._lavalink_compatibility else ""}'
 
         self.headers: dict = {
-            'Authorization': self.password,
-            'User-Id': str(self.client.bot.user.id),
+            'Authorization': self._password,
+            'User-Id': str(self._client.bot.user.id),
             'Client-Name': 'Slate/0.1.0'
         }
 
         if self._andesite:
-            self.headers['Andesite-Resume-Id'] = self._connection_id,
-            self.headers['Andesite-Short-Errors'] = True
+            self.headers['Andesite-Short-Errors'] = 'True'
 
         self._websocket: Optional[aiohttp.ClientWebSocketResponse] = None
         self._task: Optional[asyncio.Task] = None
@@ -92,8 +93,12 @@ class Node:
         return self._metadata
 
     @property
-    def stats(self) -> Optional[Stats]:
-        return self._stats
+    def andesite_stats(self) -> Optional[AndesiteStats]:
+        return self._andesite_stats
+
+    @property
+    def lavalink_stats(self) -> Optional[LavalinkStats]:
+        return self._lavalink_stats
 
     @property
     def players(self) -> Dict[int, Player]:
@@ -121,43 +126,50 @@ class Node:
 
                 message = message.json()
 
-                op = message.get('op', None)
+                op = message.pop('op', None)
                 if not op:
                     continue
 
-                if op == 'connection-id':  # Andesite specific event.
-                    self._connection_id = message.get('id')
+                await self._handle_op(op=op, message=message)
 
-                elif op == 'pong':  # Andesite specific event.
-                    self.client.bot.dispatch('slate_node_pong', Pong(node=self, time=time.time()))
+    async def _handle_op(self, op: str, message: dict) -> None:
 
-                elif op == 'metadata':  # Andesite specific event.
-                    self._metadata = Metadata(data=message.get('data'))
+        if op == 'connection-id':
+            self._connection_id = message.get('id')
 
-                #
+        elif op == 'pong':
+            self.client.bot.dispatch('slate_node_pong', Pong(node=self, time=time.time()))
 
-                elif op in ['playerUpdate', 'player-update']:  # Lavalink and Andesite event.
+        elif op == 'metadata':
+            self._metadata = Metadata(data=message.get('data'))
 
-                    player = self.players.get(int(message.get('guildId')))
-                    if not player:
-                        return
+        elif op in ['player-update', 'playerUpdate']:
 
-                    await player.update_state(state=message.get('state'))
+            player = self.players.get(int(message.get('guildId')))
+            if not player:
+                return
 
-                elif op == 'event':  # Lavalink and Andesite event.
+            await player.update_state(state=message.get('state'))
 
-                    player = self.players.get(int(message.get('guildId')))
-                    if not player:
-                        return
+        elif op == 'event':
 
-                    message['player'] = player
-                    player.dispatch_event(data=message)
+            player = self.players.get(int(message.get('guildId')))
+            if not player:
+                return
 
-                elif op == 'stats':  # Lavalink and Andesite event.
-                    self._stats = Stats(data=message.get('stats'))
+            message['player'] = player
+            player.dispatch_event(data=message)
 
-                else:
-                    pass  # TODO Log warning here, maybe raise exception idk.
+        elif op == 'stats':
+
+            stats = message.get('stats', None)
+            if stats is None:
+                self._lavalink_stats = LavalinkStats(data=message)
+            else:
+                self._andesite_stats = AndesiteStats(data=message.get('stats'))
+
+        else:
+            pass  # TODO Log warning here, maybe raise exception idk.
 
     async def _send(self, **data: dict) -> None:
 

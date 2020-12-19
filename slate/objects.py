@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 class Pong:
 
+    __slots__ = 'node', 'time'
+
     def __init__(self, *, node: Node, time: float) -> None:
         self.node = node
         self.time = time
@@ -18,17 +20,17 @@ class Pong:
         return f'<slate.Pong node={self.node} time={self.time}>'
 
 
-class Stats:
+class LavalinkStats:
 
-    __slots__ = ('node', 'data', 'playing_players', 'players', 'uptime', 'memory_reservable', 'memory_allocated', 'memory_used', 'memory_free', 'system_load',
-                 'lavalink_load', 'cpu_cores', 'frames_sent', 'frames_nulled', 'frames_deficit')
+    __slots__ = 'node', 'data', 'playing_players', 'total_players', 'uptime', 'memory_reservable', 'memory_allocated', 'memory_used', 'memory_free', 'system_load', \
+                'lavalink_load', 'cpu_cores', 'frames_sent', 'frames_nulled', 'frames_deficit'
 
     def __init__(self, *, data: dict) -> None:
 
         self.data = data
 
         self.playing_players = data.get('playingPlayers')
-        self.players = data.get('players')
+        self.total_players = data.get('players')
         self.uptime = data.get('uptime')
 
         memory = data.get('memory', {})
@@ -48,7 +50,52 @@ class Stats:
         self.frames_sent = frame_stats.get('sent', -1)
 
     def __repr__(self) -> str:
-        return f'<slate.Stats players={self.players} playing_players={self.playing_players} uptime={self.uptime}>'
+        return f'<slate.LavalinkStats total_players={self.total_players} playing_players={self.playing_players} uptime={self.uptime}>'
+
+
+class AndesiteStats:
+
+    __slots__ = 'data', 'playing_players', 'total_players', 'uptime', 'runtime_pid', 'runtime_management_spec_version', 'runtime_name', 'vm_name', 'vm_vendor', 'vm_version', \
+                'spec_name', 'spec_vendor', 'spec_version', 'processors', 'os_name', 'os_arch', 'os_version', 'cpu_andesite', 'cpu_system'
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+
+        players = data.get('players')
+        self.playing_players = players.get('playing')
+        self.total_players = players.get('total')
+
+        runtime = data.get('runtime')
+        self.uptime = runtime.get('uptime')
+        self.runtime_pid = runtime.get('pid')
+        self.runtime_management_spec_version = runtime.get('managementSpecVersion')
+        self.runtime_name = runtime.get('name')
+
+        vm = runtime.get('vm')
+        self.vm_name = vm.get('name')
+        self.vm_vendor = vm.get('vendor')
+        self.vm_version = vm.get('version')
+
+        spec = runtime.get('spec')
+        self.spec_name = spec.get('name')
+        self.spec_vendor = spec.get('vendor')
+        self.spec_version = spec.get('version')
+
+        os = data.get('os')
+        self.processors = os.get('processors')
+        self.os_name = os.get('name')
+        self.os_arch = os.get('arch')
+        self.os_version = os.get('version')
+
+        cpu = data.get('cpu')
+        self.cpu_andesite = cpu.get('andesite')
+        self.cpu_system = cpu.get('system')
+
+        # TODO Add memory stats here maybe.
+
+    def __repr__(self) -> str:
+        return f'<slate.AndesiteStats total_players={self.total_players} playing_players={self.playing_players} uptime={self.uptime}>'
 
 
 class Metadata:
