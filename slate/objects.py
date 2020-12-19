@@ -1,7 +1,11 @@
 
-import json
+from __future__ import annotations
 
-from .node import Node
+import json
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .node import Node
 
 
 class Pong:
