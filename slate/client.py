@@ -7,23 +7,21 @@ from typing import Dict, MutableMapping, Optional, Protocol, Type, Union
 
 import aiohttp
 import discord
-from discord.ext import commands
 
-from .exceptions import NoNodesFound, NodeCreationError, NodeNotFound
-
-from .player import Player
-from .bases import BaseNode
 from .andesite_node import AndesiteNode
+from .bases import BaseNode
+from .exceptions import NoNodesFound, NodeCreationError, NodeNotFound
+from .player import Player
 
 __log__ = logging.getLogger(__name__)
 
 
 class Client:
 
-    def __init__(self, *, bot: Union[commands.Bot, commands.AutoShardedBot], session: aiohttp.ClientSession = None) -> None:
+    def __init__(self, *, bot: Protocol[discord.Client], session: aiohttp.ClientSession = None) -> None:
 
-        self._bot = bot
-        self._session = session or aiohttp.ClientSession()
+        self._bot: Protocol[discord.Client] = bot
+        self._session: aiohttp.ClientSession = session or aiohttp.ClientSession()
 
         self._nodes: Dict[str, Union[Protocol[BaseNode]]] = {}
 
@@ -33,18 +31,18 @@ class Client:
     #
 
     @property
-    def bot(self) -> Union[commands.Bot, commands.AutoShardedBot]:
+    def bot(self) -> Protocol[discord.Client]:
         return self._bot
 
     @property
     def session(self) -> aiohttp.ClientSession:
         return self._session
 
+    #
+
     @property
     def nodes(self) -> MutableMapping[str, Protocol[BaseNode]]:
         return self._nodes
-
-    #
 
     @property
     def players(self) -> MutableMapping[int, Protocol[Player]]:

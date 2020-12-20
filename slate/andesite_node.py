@@ -63,8 +63,6 @@ class AndesiteNode(BaseNode):
     def metadata(self) -> Optional[Metadata]:
         return self._metadata
 
-    #
-
     @property
     def andesite_stats(self) -> Optional[AndesiteStats]:
         return self._andesite_stats

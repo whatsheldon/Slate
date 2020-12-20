@@ -68,8 +68,6 @@ class BaseNode:
     def ws_url(self) -> str:
         return self._ws_url
 
-    #
-
     @property
     def players(self) -> Dict[int, Protocol[Player]]:
         return self._players
