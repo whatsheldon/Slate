@@ -84,11 +84,13 @@ class Client:
 
         return available_nodes.get(identifier, None)
 
-    async def create_player(self, *, channel: discord.VoiceChannel) -> Protocol[Player]:
+    async def create_player(self, *, channel: discord.VoiceChannel, node_identifier: str = None) -> Protocol[Player]:
 
-        node = self.get_node()
-        if not node:
+        available_nodes = {identifier: node for identifier, node in self._nodes.items() if node.is_connected}
+        if not available_nodes:
             raise NodeNotFound('There are no nodes available.')
+
+        node = available_nodes.get(node_identifier, random.choice([node for node in available_nodes.values()]))
 
         player = await channel.connect(cls=Player)
         player._node = node
