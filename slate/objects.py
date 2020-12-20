@@ -2,22 +2,6 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .node import Node
-
-
-class Pong:
-
-    __slots__ = 'node', 'time'
-
-    def __init__(self, *, node: Node, time: float) -> None:
-        self.node = node
-        self.time = time
-
-    def __repr__(self) -> str:
-        return f'<slate.Pong node={self.node} time={self.time}>'
 
 
 class LavalinkStats:
@@ -108,20 +92,180 @@ class Metadata:
         self.data = data
 
         self.version = data.get('version')
-        self.version_major = data.get('version-major')
-        self.version_minor = data.get('version-minor')
-        self.version_revision = data.get('version-revision')
-        self.version_commit = data.get('version-commit')
-        self.version_build = data.get('version-build')
-        self.node_region = data.get('node-region')
-        self.node_id = data.get('node-id')
-        self.enabled_sources = data.get('enabled-sources')
-        self.loaded_plugins = data.get('loaded-plugins')
+        self.version_major = data.get('versionMajor')
+        self.version_minor = data.get('versionMinor')
+        self.version_revision = data.get('versionRevision')
+        self.version_commit = data.get('versionCommit')
+        self.version_build = data.get('versionBuild')
+        self.node_region = data.get('nodeRegion')
+        self.node_id = data.get('nodeId')
+        self.enabled_sources = data.get('enabledSources')
+        self.loaded_plugins = data.get('loadedPlugins')
 
     def __repr__(self) -> str:
-        return f'<slate.Metadata version={self.version} region={self.node_region} id={self.node_id} enabled_sources={self.enabled_sources}>'
+        return f'<slate.Metadata version=\'{self.version}\' region=\'{self.node_region}\' id=\'{self.node_id}\' enabled_sources=\'{self.enabled_sources}\'>'
 
 
+#
+
+
+class TrackStartEvent:
+
+    __slots__ = ('data', 'player', 'track')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+        self.track = data.get('track')
+
+    def __repr__(self) -> str:
+        return f'<LavaLinkTrackStartEvent player={self.player!r} track=\'{self.track}\''
+
+    def __str__(self) -> str:
+        return 'track_start'
+
+
+class TrackEndEvent:
+
+    __slots__ = ('data', 'player', 'track', 'reason', 'may_start_next')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+        self.track = data.get('track')
+        self.reason = data.get('reason')
+
+        self.may_start_next = data.get('mayStartNext', False)
+
+    def __repr__(self) -> str:
+        return f'<slate.TrackEndEvent player={self.player} track=\'{self.track}\' reason=\'{self.reason}\''
+
+    def __str__(self) -> str:
+        return 'track_end'
+
+
+class TrackExceptionEvent:
+
+    __slots__ = ('data', 'player', 'track', 'message', 'cause', 'stack', 'suppressed', 'severity')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+        self.track = data.get('track')
+
+        exception = data.get('exception')
+        self.message = exception.get('message')
+        self.cause = exception.get('cause', None)
+
+        self.stack = exception.get('stack', [])
+        self.suppressed = exception.get('suppressed', [])
+
+        self.severity = exception.get('severity', 'UNKNOWN')
+
+    def __repr__(self) -> str:
+        return f'<slate.TrackExceptionEvent player={self.player} track=\'{self.track}\' message=\'{self.message}\' severity=\'{self.severity}\' cause=\'{self.cause}\''
+
+    def __str__(self) -> str:
+        return 'track_exception'
+
+
+class TrackStuckEvent:
+
+    __slots__ = ('data', 'player', 'track', 'threshold_ms')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+        self.track = data.get('track')
+        self.threshold_ms = data.get('thresholdMs')
+
+    def __repr__(self) -> str:
+        return f'<slate.TrackStuckEvent player={self.player} track=\'{self.track}\' threshold_ms=\'{self.threshold_ms}\''
+
+    def __str__(self) -> str:
+        return 'track_stuck'
+
+
+class WebSocketClosedEvent:
+
+    __slots__ = ('data', 'player', 'track', 'reason', 'code', 'by_remote')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+        self.reason = data.get('reason')
+        self.code = data.get('code')
+        self.by_remote = data.get('byRemote')
+
+    def __repr__(self) -> str:
+        return f'<slate.WebSocketClosedEvent player={self.player} reason=\'{self.reason}\' code=\'{self.code}\' by_remote=\'{self.by_remote}\''
+
+    def __str__(self) -> str:
+        return 'websocket_closed'
+
+
+#
+
+
+class PlayerConnectedEvent:
+
+    __slots__ = ('data', 'player', 'track', 'threshold_ms')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+    def __str__(self) -> str:
+        return 'lavalink_player_connected'
+
+    def __repr__(self) -> str:
+        return f'<LavaLinkPlayerConnectedEvent player={self.player!r}'
+
+
+class PlayerDisconnectedEvent:
+
+    __slots__ = ('data', 'player')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+    def __str__(self) -> str:
+        return 'lavalink_player_disconnected'
+
+    def __repr__(self) -> str:
+        return f'<LavaLinkPlayerDisconnectedEvent player={self.player!r}'
+
+
+class PlayerQueueUpdate:
+
+    __slots__ = ('data', 'player')
+
+    def __init__(self, *, data: dict) -> None:
+
+        self.data = data
+        self.player = data.get('player')
+
+    def __str__(self) -> str:
+        return 'lavalink_player_queue_update'
+
+    def __repr__(self) -> str:
+        return f'<LavaLinkPlayerQueueUpdateEvent player={self.player!r}'
+
+
+#
 
 
 class Track:
@@ -221,146 +365,3 @@ class Search:
 
     def __repr__(self):
         return f'<LavaLinkSearch source=\'{self.source}\' source_type=\'{self.source_type}\' tracks={self.tracks} result={self.tracks}>'
-
-
-class TrackStartEvent:
-
-    __slots__ = ('data', 'player', 'track')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-        self.track = data.get('track')
-
-    def __str__(self) -> str:
-        return 'lavalink_track_start'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkTrackStartEvent player={self.player!r} track={self.track}'
-
-
-class TrackEndEvent:
-
-    __slots__ = ('data', 'player', 'track', 'reason')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-        self.track = data.get('track')
-        self.reason = data.get('reason')
-
-    def __str__(self) -> str:
-        return 'lavalink_track_end'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkTrackEndEvent player={self.player!r} track={self.track} reason={self.reason}'
-
-
-class TrackExceptionEvent:
-
-    __slots__ = ('data', 'player', 'track', 'error')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-        self.track = data.get('track')
-        self.error = data.get('error')
-
-    def __str__(self) -> str:
-        return 'lavalink_track_exception'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkTrackExceptionEvent player={self.player!r} track={self.track} error={self.error}'
-
-
-class TrackStuckEvent:
-
-    __slots__ = ('data', 'player', 'track', 'threshold_ms')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-        self.track = data.get('track')
-        self.threshold_ms = data.get('thresholdMs')
-
-    def __str__(self) -> str:
-        return 'lavalink_track_stuck'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkTrackStuckEvent player={self.player!r} track={self.track} threshold_ms={self.threshold_ms}'
-
-
-class PlayerConnectedEvent:
-
-    __slots__ = ('data', 'player', 'track', 'threshold_ms')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-    def __str__(self) -> str:
-        return 'lavalink_player_connected'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkPlayerConnectedEvent player={self.player!r}'
-
-
-class PlayerDisconnectedEvent:
-
-    __slots__ = ('data', 'player')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-    def __str__(self) -> str:
-        return 'lavalink_player_disconnected'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkPlayerDisconnectedEvent player={self.player!r}'
-
-
-class PlayerQueueUpdate:
-
-    __slots__ = ('data', 'player')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-    def __str__(self) -> str:
-        return 'lavalink_player_queue_update'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkPlayerQueueUpdateEvent player={self.player!r}'
-
-
-class WebSocketClosedEvent:
-
-    __slots__ = ('data', 'player', 'track', 'code', 'reason', 'by_remote')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-        self.code = data.get('code')
-        self.reason = data.get('reason')
-        self.by_remote = data.get('byRemote')
-
-    def __str__(self) -> str:
-        return 'lavalink_websocket_closed'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkWebSocketClosedEvent player={self.player!r} code={self.code} reason={self.reason} by_remote={self.by_remote}'

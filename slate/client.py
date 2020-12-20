@@ -3,15 +3,17 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Dict, MutableMapping, Optional, Protocol, Union
+from typing import Dict, MutableMapping, Optional, Protocol, Type, Union
 
 import aiohttp
 import discord
 from discord.ext import commands
 
-from .exceptions import NodeCreationError, NodeNotFound, NodesNotFound
-from .node import Node
+from .exceptions import NoNodesFound, NodeCreationError, NodeNotFound
+
 from .player import Player
+from .bases import BaseNode
+from .andesite_node import AndesiteNode
 
 __log__ = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ class Client:
         self._bot = bot
         self._session = session or aiohttp.ClientSession()
 
-        self._nodes: Dict[str, Node] = {}
+        self._nodes: Dict[str, Union[Protocol[BaseNode]]] = {}
 
     def __repr__(self) -> str:
         return f'<slate.Client node_count={len(self.nodes)} player_count={len(self.players)}>'
@@ -39,13 +41,13 @@ class Client:
         return self._session
 
     @property
-    def nodes(self) -> MutableMapping[str, Node]:
+    def nodes(self) -> MutableMapping[str, Protocol[BaseNode]]:
         return self._nodes
 
     #
 
     @property
-    def players(self) -> MutableMapping[int, Player]:
+    def players(self) -> MutableMapping[int, Protocol[Player]]:
 
         players = []
         for node in self.nodes.values():
@@ -55,23 +57,29 @@ class Client:
 
     #
 
-    async def create_node(self, *, host: str, port: str, password: str, identifier: str, andesite: bool = False, lavalink_compatibility: bool = False) -> Node:
+    async def create_node(self, *, host: str, port: str, password: str, identifier: str, use_compatibility: bool = False, cls: Protocol[Type[BaseNode]]) -> Protocol[BaseNode]:
 
         await self.bot.wait_until_ready()
 
         if identifier in self.nodes.keys():
             raise NodeCreationError(f'Node with identifier \'{identifier}\' already exists.')
 
-        node = Node(client=self, host=host, port=port, password=password, identifier=identifier, andesite=andesite, lavalink_compatibility=lavalink_compatibility)
-        await node.connect()
+        if not issubclass(cls, BaseNode):
+            raise NodeCreationError('The \'node\' argument must be a subclass of \'slate.BaseNode\'.')
 
+        if issubclass(cls, AndesiteNode):
+            node = cls(client=self, host=host, port=port, password=password, identifier=identifier, use_compatibility=use_compatibility)
+        else:
+            node = cls(client=self, host=host, port=port, password=password, identifier=identifier)
+
+        await node.connect()
         return node
 
-    def get_node(self, *, identifier: str = None) -> Optional[Node]:
+    def get_node(self, *, identifier: str = None) -> Optional[Protocol[BaseNode]]:
 
         available_nodes = {identifier: node for identifier, node in self._nodes.items() if node.is_connected}
         if not available_nodes:
-            raise NodesNotFound('There are no Nodes available.')
+            raise NoNodesFound('There are no Nodes available.')
 
         if identifier is None:
             return random.choice([node for node in available_nodes.values()])
@@ -85,9 +93,9 @@ class Client:
             raise NodeNotFound('There are no nodes available.')
 
         player = await channel.connect(cls=Player)
-        player.node = node
+        player._node = node
 
-        node.players[channel.guild.id] = player
+        node._players[channel.guild.id] = player
         return player
 
     def get_player(self, *, guild: discord.Guild) -> Optional[Protocol[Player]]:

@@ -15,10 +15,13 @@ class NodeConnectionError(NodeException):
     pass
 
 
+class NodeConnectionClosed(NodeException):
+    pass
+
+
 class NodeNotFound(NodeException):
     pass
 
 
-class NodesNotFound(NodeException):
+class NoNodesFound(NodeException):
     pass
-
