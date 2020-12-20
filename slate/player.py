@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import time
 from abc import ABC
-from typing import List, Optional, Protocol, TYPE_CHECKING
+from typing import List, Optional, Protocol
 
 import discord
 from discord import VoiceProtocol
 
-if TYPE_CHECKING:
-    from .bases import BaseNode
-    from . import objects
-    from . import filters
+from . import filters, objects
+from .andesite_node import AndesiteNode
+from .bases import BaseNode
 
 
 class Player(VoiceProtocol, ABC):
@@ -118,7 +117,7 @@ class Player(VoiceProtocol, ABC):
     async def _dispatch_voice_update(self) -> None:
 
         if {'sessionId', 'event'} == self._voice_state.keys():
-            op = 'voice-server-update' if self.node.andesite and not self.node.lavalink_compatibility else 'voiceUpdate'
+            op = 'voice-server-update' if isinstance(self.node, AndesiteNode) else 'voiceUpdate'
             await self.node._send(op=op, guildId=str(self.guild.id), **self._voice_state)
 
     async def _update_state(self, *, state: dict) -> None:
@@ -127,7 +126,7 @@ class Player(VoiceProtocol, ABC):
         self._last_position = state.get('position', 0)
         self._last_update = time.time() * 1000
 
-        if self.node.andesite and not self.node.lavalink_compatibility:
+        if isinstance(self.node, AndesiteNode):
             self._paused = state.get('paused', False)
             self._volume = state.get('volume', 100)
 
@@ -140,7 +139,9 @@ class Player(VoiceProtocol, ABC):
         if not event:
             return  # TODO Log the fact that we have an unknown event here.
 
+        data['player'] = self
         event = event(data=data)
+
         self.bot.dispatch(f'slate_{str(event)}', event)
 
     #
@@ -154,6 +155,8 @@ class Player(VoiceProtocol, ABC):
             return
 
         await self.guild.change_voice_state(channel=None)
+        self.cleanup()
+
         self.channel = None
 
     async def stop(self) -> None:
@@ -169,7 +172,6 @@ class Player(VoiceProtocol, ABC):
             await self.stop()
             await self.node._send(op='destroy', guildId=str(self.guild.id))
 
-        await self.cleanup()
         del self.node.players[self.guild.id]
 
     async def play(self, *, track: objects.Track, start: int = 0, end: int = 0, no_replace: bool = False, pause: bool = False) -> None:
@@ -197,17 +199,17 @@ class Player(VoiceProtocol, ABC):
 
     async def set_filter(self, *, filter: filters.Filter) -> None:
 
-        await self.node.send(op='filters', guildId=str(self.guild.id), **filter.payload)
+        await self.node._send(op='filters', guildId=str(self.guild.id), **filter.payload)
         self._filter = filter
 
     async def set_volume(self, *, volume: int) -> None:
 
-        await self.node.send(op='volume', guildId=str(self.guild.id), volume=volume)
+        await self.node._send(op='volume', guildId=str(self.guild.id), volume=volume)
         self._volume = volume
 
     async def set_pause(self, *, pause: bool) -> None:
 
-        await self.node.send(op='pause', guildId=str(self.guild.id), pause=pause)
+        await self.node._send(op='pause', guildId=str(self.guild.id), pause=pause)
         self._paused = pause
 
     async def set_position(self, *, position: int) -> None:
@@ -218,4 +220,4 @@ class Player(VoiceProtocol, ABC):
         if 0 > position > self.current.length:
             return
 
-        await self.node.send(op='seek', guildId=str(self.guild.id), position=position)
+        await self.node._send(op='seek', guildId=str(self.guild.id), position=position)
