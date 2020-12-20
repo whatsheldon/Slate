@@ -3,96 +3,125 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Union
+from abc import ABC
+from typing import List, Optional, Protocol, TYPE_CHECKING, Union
 
 import discord
 from discord import VoiceProtocol
 from discord.ext import commands
 
+if TYPE_CHECKING:
+    from .bases import BaseNode
+    from . import objects
 
-class Player(VoiceProtocol):
 
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], channel: discord.VoiceChannel) -> None:
-        super().__init__(client=bot, channel=channel)
+class Player(VoiceProtocol, ABC):
 
-        self.bot = self.client = bot
-        self.channel = channel
-        self.guild = channel.guild
+    def __init__(self, bot, channel: discord.VoiceChannel) -> None:
+        super().__init__(bot, channel)
 
-        self.text_channel = None
-        self.node = None
-        self.task = None
+        self.client: Union[commands.Bot, commands.AutoShardedBot] = bot
+        self.bot: Union[commands.Bot, commands.AutoShardedBot] = bot
 
-        self.paused = False
-        self.current = None
-        self.volume = 100
+        self.channel: discord.VoiceChannel = channel
 
-        self.last_position = 0
-        self.last_update = 0
-        self.last_time = 0
+        self._guild: discord.Guild = channel.guild
 
-        self.wait_queue_add = asyncio.Event()
-        self.wait_track_start = asyncio.Event()
-        self.wait_track_end = asyncio.Event()
+        self._node: Optional[Protocol[BaseNode]] = None
+        self._task: Optional[asyncio.Task] = None
 
-        self.voice_state = {}
+        self._current: Optional[objects.Track] = None
+        self._volume: int = 100
+        self._paused: bool = False
 
-        self.queue = queue.Queue(player=self)
-        self.past_queue = queue.Queue(player=self)
+        self._last_position: int = 0
+        self._last_update: int = 0
+        self._last_time: int = 0
 
-        self.skip_requests = []
+        self._voice_state: dict = {}
 
     def __repr__(self) -> str:
-        return f'<LavaLinkPlayer node={self.node!r} guild={self.guild!r} channel={self.channel!r}>'
+        return f'<slate.Player node={self.node} guild={self.guild} channel={self.channel} is_connected={self.is_connected} is_playing={self.is_playing}>'
 
-    async def on_voice_server_update(self, data: dict) -> None:
-
-        self.voice_state.update({'event': data})
-        await self.dispatch_voice_update()
-
-    async def on_voice_state_update(self, data: dict) -> None:
-
-        self.voice_state.update({'sessionId': data.get('session_id')})
-
-        channel_id = data.get('channel_id')
-        if not channel_id:
-            self.voice_state.clear()
-            return
-
-        self.channel = self.guild.get_channel(int(channel_id))
-        await self.dispatch_voice_update()
-
-    async def dispatch_voice_update(self) -> None:
-
-        if {'sessionId', 'event'} == self.voice_state.keys():
-            await self.node.send(op='voiceUpdate', guildId=str(self.guild.id), **self.voice_state)
-
-    async def update_state(self, *, state: dict) -> None:
-
-        self.last_position = state.get('position', 0)
-        self.last_time = state.get('time', 0)
-        self.last_update = time.time() * 1000
-
-    def dispatch_event(self, *, data: dict) -> None:
-
-        event = getattr(objects, data.pop('type'), None)
-        if not event:
-            return
-
-        event = event(data=data)
-        self.bot.dispatch(str(event), event)
+    #
 
     @property
-    def is_connected(self) -> bool:
-        return self.channel is not None
+    def guild(self) -> discord.Guild:
+        return self._guild
 
     @property
-    def is_playing(self) -> bool:
-        return self.is_connected is True and self.current is not None
+    def node(self) -> Protocol[BaseNode]:
+        return self._node
+
+    @property
+    def current(self) -> objects.Track:
+        return self._current
+
+    @property
+    def volume(self) -> int:
+        return self._volume
 
     @property
     def is_paused(self) -> bool:
-        return self.paused is True
+        return self._paused
+
+    @property
+    def is_connected(self) -> bool:
+        return self._channel is not None
+
+    @property
+    def is_playing(self) -> bool:
+        return self.is_connected and self._current is not None
+
+    #
+
+    async def on_voice_server_update(self, data: dict) -> None:
+
+        self._voice_state.update({'event': data})
+        await self._dispatch_voice_update()
+
+    async def on_voice_state_update(self, data: dict) -> None:
+
+        self._voice_state.update({'sessionId': data.get('session_id')})
+
+        channel_id = data.get('channel_id')
+        if not channel_id:
+            self._channel = None
+            self._voice_state.clear()
+            return
+
+        self._channel = self.guild.get_channel(int(channel_id))
+        await self._dispatch_voice_update()
+
+    async def _dispatch_voice_update(self) -> None:
+
+        if {'sessionId', 'event'} == self._voice_state.keys():
+            op = 'voice-server-update' if self.node.andesite and not self.node.lavalink_compatibility else 'voiceUpdate'
+            await self.node._send(op=op, guildId=str(self.guild.id), **self._voice_state)
+
+    async def _update_player_state(self, *, state: dict) -> None:
+
+        self._last_time = state.get('time', 0)
+        self._last_position = state.get('position', 0)
+        self._last_update = time.time() * 1000
+
+        if self.node.andesite and not self.node.lavalink_compatibility:
+            self._paused = state.get('paused', False)
+            self._volume = state.get('volume', 100)
+
+            # TODO Parse the filter shit please
+            # self._filter = state.get('filters', Filter())
+
+    def _dispatch_event(self, *, data: dict) -> None:
+
+        event = getattr(objects, data.pop('type'), None)
+        if not event:
+            return  # TODO Log the fact that we have an unknown event here.
+
+        event = event(data=data)
+        self.bot.dispatch(f'slate_{str(event)}', event)
+
+    #
 
     @property
     def position(self) -> float:
@@ -101,9 +130,9 @@ class Player(VoiceProtocol):
             return 0
 
         if self.paused:
-            return min(self.last_position, self.current.length)
+            return min(self._last_position, self.current.length)
 
-        position = self.last_position + ((time.time() * 1000) - self.last_update)
+        position = self._last_position + ((time.time() * 1000) - self._last_update)
 
         if position > self.current.length:
             return 0
@@ -111,30 +140,26 @@ class Player(VoiceProtocol):
         return min(position, self.current.length)
 
     @property
-    def listeners(self) -> list:
+    def listeners(self) -> List[discord.Member]:
         return [member for member in self.channel.members if not member.bot and not member.voice.deaf or not member.voice.self_deaf]
 
+    #
+
     async def connect(self, *, timeout: float, reconnect: bool) -> None:
-
         await self.guild.change_voice_state(channel=self.channel, self_deaf=True)
-        self.task = self.bot.loop.create_task(self.loop())
-
-        self.dispatch_event(data={'type': 'PlayerConnectedEvent', 'player': self})
 
     async def disconnect(self, *, force: bool = True) -> None:
 
+        if not force and not self.is_connected:
+            return
+
         await self.guild.change_voice_state(channel=None)
-        self.cleanup()
-
-        self.channel = None
-
-        self.dispatch_event(data={'type': 'PlayerDisconnectedEvent', 'player': self})
+        self._channel = None
 
     async def stop(self) -> None:
 
-        await self.node.send(op='stop', guildId=str(self.guild.id))
-        self.skip_requests.clear()
-        self.current = None
+        await self.node._send(op='stop', guildId=str(self.guild.id))
+        self._current = None
 
     async def destroy(self) -> None:
 
@@ -142,16 +167,16 @@ class Player(VoiceProtocol):
 
         if self.node.is_connected:
             await self.stop()
-            await self.node.send(op='destroy', guildId=str(self.guild.id))
+            await self.node._send(op='destroy', guildId=str(self.guild.id))
 
-        self.task.cancel()
+        await self.cleanup()
         del self.node.players[self.guild.id]
 
-    async def play(self, *, track: objects.Track, start: int = 0, end: int = 0) -> None:
+    async def play(self, *, track: objects.Track, start: int = 0, end: int = 0, no_replace: bool = False, pause: bool = False) -> None:
 
-        self.last_position = 0
-        self.last_time = 0
-        self.last_update = 0
+        self._last_position = 0
+        self._last_time = 0
+        self._last_update = 0
 
         payload = {
             'op': 'play',
@@ -162,9 +187,15 @@ class Player(VoiceProtocol):
             payload['startTime'] = start
         if 0 < end < track.length:
             payload['endTime'] = end
+        if no_replace:
+            payload['noReplace'] = no_replace
+        if pause:
+            payload['pause'] = pause
 
-        await self.node.send(**payload)
-        self.current = track
+        await self.node._send(**payload)
+        self._current = track
+
+    #
 
     async def set_position(self, *, position: int) -> None:
 
