@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from typing import Optional, List, Tuple, Dict, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 
 # TODO Implement more classmethods for each filter type.

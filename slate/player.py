@@ -38,7 +38,7 @@ class Player(VoiceProtocol, ABC):
         self._voice_state: dict = {}
 
     def __repr__(self) -> str:
-        return f'<slate.Player node={self.node} guild={self.guild} channel={self.channel} is_connected={self.is_connected} is_playing={self.is_playing}>'
+        return f'<slate.Player node={self.node!r} guild={self.guild!r} channel={self.channel!r} is_connected={self.is_connected} is_playing={self.is_playing}>'
 
     #
 
@@ -68,7 +68,7 @@ class Player(VoiceProtocol, ABC):
 
     @property
     def is_connected(self) -> bool:
-        return self._channel is not None
+        return self.channel is not None
 
     @property
     def is_playing(self) -> bool:
@@ -107,11 +107,11 @@ class Player(VoiceProtocol, ABC):
 
         channel_id = data.get('channel_id')
         if not channel_id:
-            self._channel = None
+            self.channel = None
             self._voice_state.clear()
             return
 
-        self._channel = self.guild.get_channel(int(channel_id))
+        self.channel = self.guild.get_channel(int(channel_id))
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self) -> None:
@@ -174,7 +174,7 @@ class Player(VoiceProtocol, ABC):
 
         del self.node.players[self.guild.id]
 
-    async def play(self, *, track: objects.Track, start: int = 0, end: int = 0, no_replace: bool = False, pause: bool = False) -> None:
+    async def play(self, *, track: objects.Track, start: int = 0, end: int = 0, volume: int = None, no_replace: bool = False, pause: bool = False) -> None:
 
         self._last_position = 0
         self._last_time = 0
@@ -189,6 +189,8 @@ class Player(VoiceProtocol, ABC):
             payload['startTime'] = start
         if 0 < end < track.length:
             payload['endTime'] = end
+        if volume:
+            payload['volume'] = volume
         if no_replace:
             payload['noReplace'] = no_replace
         if pause:

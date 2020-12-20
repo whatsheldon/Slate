@@ -1,7 +1,7 @@
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Protocol
-import json
+
+from typing import Dict, List, Optional, Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .player import Player
@@ -140,9 +140,9 @@ class TrackEndEvent:
         self.player: Protocol[Player] = data.get('player')
 
         self.track = data.get('track')
-        self.reason = data.get('reason')
 
-        self.may_start_next = data.get('mayStartNext', False)
+        self.reason: str = data.get('reason')
+        self.may_start_next: bool = data.get('mayStartNext', False)
 
     def __repr__(self) -> str:
         return f'<slate.TrackEndEvent player={self.player} track=\'{self.track}\' reason=\'{self.reason}\''
@@ -163,13 +163,11 @@ class TrackExceptionEvent:
         self.track = data.get('track')
 
         exception = data.get('exception')
-        self.message = exception.get('message')
-        self.cause = exception.get('cause', None)
-
-        self.stack = exception.get('stack', [])
-        self.suppressed = exception.get('suppressed', [])
-
-        self.severity = exception.get('severity', 'UNKNOWN')
+        self.message: str = exception.get('message')
+        self.cause: str = exception.get('cause', None)
+        self.stack: str = exception.get('stack', [])
+        self.suppressed: str = exception.get('suppressed', [])
+        self.severity: str = exception.get('severity', 'UNKNOWN')
 
     def __repr__(self) -> str:
         return f'<slate.TrackExceptionEvent player={self.player} track=\'{self.track}\' message=\'{self.message}\' severity=\'{self.severity}\' cause=\'{self.cause}\''
@@ -188,7 +186,8 @@ class TrackStuckEvent:
         self.player: Protocol[Player] = data.get('player')
 
         self.track = data.get('track')
-        self.threshold_ms = data.get('thresholdMs')
+
+        self.threshold_ms: str = data.get('thresholdMs')
 
     def __repr__(self) -> str:
         return f'<slate.TrackStuckEvent player={self.player} track=\'{self.track}\' threshold_ms=\'{self.threshold_ms}\''
@@ -206,9 +205,9 @@ class WebSocketClosedEvent:
         self.data: dict = data
         self.player: Protocol[Player] = data.get('player')
 
-        self.reason = data.get('reason')
-        self.code = data.get('code')
-        self.by_remote = data.get('byRemote')
+        self.reason: str = data.get('reason')
+        self.code: str = data.get('code')
+        self.by_remote: str = data.get('byRemote')
 
     def __repr__(self) -> str:
         return f'<slate.WebSocketClosedEvent player={self.player} reason=\'{self.reason}\' code=\'{self.code}\' by_remote=\'{self.by_remote}\''
@@ -220,151 +219,121 @@ class WebSocketClosedEvent:
 #
 
 
-class PlayerConnectedEvent:
-
-    __slots__ = ('data', 'player', 'track', 'threshold_ms')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-    def __str__(self) -> str:
-        return 'lavalink_player_connected'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkPlayerConnectedEvent player={self.player!r}'
-
-
-class PlayerDisconnectedEvent:
-
-    __slots__ = ('data', 'player')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-    def __str__(self) -> str:
-        return 'lavalink_player_disconnected'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkPlayerDisconnectedEvent player={self.player!r}'
-
-
-class PlayerQueueUpdate:
-
-    __slots__ = ('data', 'player')
-
-    def __init__(self, *, data: dict) -> None:
-
-        self.data = data
-        self.player = data.get('player')
-
-    def __str__(self) -> str:
-        return 'lavalink_player_queue_update'
-
-    def __repr__(self) -> str:
-        return f'<LavaLinkPlayerQueueUpdateEvent player={self.player!r}'
-
-
-#
-
-
 class Track:
 
-    __slots__ = ('track_id', 'info', 'ctx', 'identifier', 'is_seekable', 'author', 'length', 'is_stream', 'position', 'title', 'uri', 'requester')
+    __slots__ = ('_track_id', '_track_info', '_class', '_title', '_author', '_length', '_identifier', '_uri', '_is_stream', '_is_seekable', '_position')
 
-    def __init__(self, *, track_id: str, info: dict, ctx: context.Context = None) -> None:
+    def __init__(self, *, track_id: str, track_info: dict) -> None:
 
-        self.track_id = track_id
-        self.info = info
-        self.ctx = ctx
+        self._track_id = track_id
+        self._track_info = track_info
 
-        self.identifier = info.get('identifier')
-        self.is_seekable = info.get('isSeekable')
-        self.author = info.get('author')
-        self.length = info.get('length')
-        self.is_stream = info.get('isStream')
-        self.position = info.get('position')
-        self.title = info.get('title')
-        self.uri = info.get('uri')
+        self._class = track_info.get('class', 'UNKNOWN')
 
-        if self.ctx is not None:
-            self.requester = ctx.author
+        self._title = track_info.get('title')
+        self._author = track_info.get('author')
+        self._length = track_info.get('length')
+        self._identifier = track_info.get('identifier')
+        self._uri = track_info.get('uri')
+        self._is_stream = track_info.get('isStream')
+        self._is_seekable = track_info.get('isSeekable')
+        self._position = track_info.get('position')
 
     def __repr__(self) -> str:
-        return f'<LavaLinkTrack title=\'{self.title}\' uri=\'<{self.uri}>\' source=\'{self.source}\' length={self.length}>'
+        return f'<slate.Track title=\'{self._title}\' uri=\'<{self._uri}>\' source=\'{self.source}\' length={self._length}>'
+
+    #
 
     @property
-    def thumbnail(self) -> str:
+    def track_id(self) -> str:
+        return self._track_id
 
-        thumbnail = None
+    @property
+    def title(self) -> str:
+        return self._title
 
-        if self.source == 'Spotify':
-            thumbnail = self.info.get('thumbnail')
+    @property
+    def author(self) -> str:
+        return self._author
 
-        elif self.source == 'Youtube':
-            thumbnail = f'https://img.youtube.com/vi/{self.identifier}/mqdefault.jpg'
+    @property
+    def length(self) -> float:
+        return self._length
 
-        if thumbnail is None:
-            thumbnail = f'https://dummyimage.com/1280x720/000/fff.png&text=+'
+    @property
+    def identifier(self) -> str:
+        return self._identifier
 
-        return thumbnail
+    @property
+    def uri(self) -> str:
+        return self._uri
+
+    @property
+    def is_stream(self) -> bool:
+        return self._is_stream
+
+    @property
+    def is_seekable(self) -> bool:
+        return self._is_seekable
+
+    @property
+    def position(self) -> float:
+        return self._position
+
+    #
 
     @property
     def source(self) -> str:
 
         if not self.uri:
-            return 'Unknown'
+            return 'UNKNOWN'
 
-        for source in ['youtube', 'vimeo', 'bandcamp', 'soundcloud', 'spotify']:
+        for source in ['bandcamp', 'beam', 'soundcloud', 'twitch', 'vimeo', 'youtube']:
             if source in self.uri:
                 return source.title()
 
         return 'HTTP'
 
     @property
-    def json(self) -> str:
+    def thumbnail(self) -> str:
 
-        data = self.info.copy()
-        data['track_id'] = self.track_id
-        data['thumbnail'] = self.thumbnail
-        data['requester_id'] = self.requester.id
-        data['requester_name'] = self.requester.name
-        return json.dumps(data)
+        if self.source == 'Youtube':
+            return f'https://img.youtube.com/vi/{self.identifier}/mqdefault.jpg'
+
+        return f'https://dummyimage.com/1280x720/000/fff.png&text=+'
 
 
 class Playlist:
 
-    __slots__ = ('playlist_info', 'raw_tracks', 'ctx', 'tracks', 'name', 'selected_track')
+    __slots__ = ('_playlist_info', '_raw_tracks', '_tracks', '_name', '_selected_track')
 
-    def __init__(self, *, playlist_info: dict, raw_tracks: list, ctx: context.Context = None) -> None:
+    def __init__(self, *, playlist_info: dict, tracks: List[Dict]) -> None:
 
-        self.playlist_info = playlist_info
-        self.raw_tracks = raw_tracks
-        self.ctx = ctx
+        self._playlist_info = playlist_info
 
-        self.tracks = [Track(track_id=track.get('track'), info=track.get('info'), ctx=self.ctx) for track in self.raw_tracks]
+        self._name = self._playlist_info.get('name')
+        self._selected_track = self._playlist_info.get('selectedTrack')
 
-        self.name = self.playlist_info.get('name')
-        self.selected_track = self.playlist_info.get('selectedTrack')
+        self._raw_tracks = tracks
+
+        self._tracks = [Track(track_id=track.get('track'), track_info=track.get('info')) for track in self._raw_tracks]
 
     def __repr__(self) -> str:
-        return f'<LavaLinkPlaylist name=\'{self.name}\' track_count={len(self.tracks)}>'
+        return f'<slate.Playlist name=\'{self._name}\' selected_track={self.selected_track} track_count={len(self._tracks)}>'
 
+    #
 
-class Search:
+    @property
+    def name(self) -> str:
+        return self._name
 
-    __slots__ = ('source', 'source_type', 'tracks', 'result')
+    @property
+    def selected_track(self) -> Optional[Track]:
+        try:
+            return self._tracks[self._selected_track]
+        except IndexError:
+            return None
 
-    def __init__(self, *, source: str, source_type: str, tracks: typing.List[Track],
-                 result: typing.Union[spotify.Track, spotify.Album, spotify.Playlist, typing.List[Track], Playlist]):
-
-        self.source = source
-        self.source_type = source_type
-        self.tracks = tracks
-        self.result = result
-
-    def __repr__(self):
-        return f'<LavaLinkSearch source=\'{self.source}\' source_type=\'{self.source_type}\' tracks={self.tracks} result={self.tracks}>'
+    @property
+    def tracks(self) -> List[Track]:
+        return self._tracks

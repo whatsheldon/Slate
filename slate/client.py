@@ -3,14 +3,14 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Dict, MutableMapping, Optional, Protocol, Type, Union
+from typing import Dict, MutableMapping, Optional, Protocol, Type
 
 import aiohttp
 import discord
 
 from .andesite_node import AndesiteNode
 from .bases import BaseNode
-from .exceptions import NoNodesFound, NodeCreationError, NodeNotFound
+from .exceptions import NoNodesFound, NodeCreationError, NodeNotFound, PlayerAlreadyExists
 from .player import Player
 
 __log__ = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class Client:
         self._bot: Protocol[discord.Client] = bot
         self._session: aiohttp.ClientSession = session or aiohttp.ClientSession()
 
-        self._nodes: Dict[str, Union[Protocol[BaseNode]]] = {}
+        self._nodes: Dict[str, Protocol[BaseNode]] = {}
 
     def __repr__(self) -> str:
         return f'<slate.Client node_count={len(self.nodes)} player_count={len(self.players)}>'
@@ -86,11 +86,12 @@ class Client:
 
     async def create_player(self, *, channel: discord.VoiceChannel, node_identifier: str = None) -> Protocol[Player]:
 
-        available_nodes = {identifier: node for identifier, node in self._nodes.items() if node.is_connected}
-        if not available_nodes:
-            raise NodeNotFound('There are no nodes available.')
+        node = self.get_node(identifier=node_identifier)
+        if not node and node_identifier:
+            raise NodeNotFound(f'Node with identifier \'{node_identifier}\' was not found.')
 
-        node = available_nodes.get(node_identifier, random.choice([node for node in available_nodes.values()]))
+        if channel.guild in self.players.keys():
+            raise PlayerAlreadyExists(f'Player for guild \'{channel.guild}\' already exists.')
 
         player = await channel.connect(cls=Player)
         player._node = node

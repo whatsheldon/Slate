@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Dict, Optional, Protocol, TYPE_CHECKING
+import urllib.parse
+from typing import Dict, List, Optional, Protocol, TYPE_CHECKING, Union
 
 import aiohttp
 
-from .exceptions import NodeConnectionError
+from . import objects
+from .backoff import ExponentialBackoff
+from .exceptions import NodeConnectionError, TrackLoadError, TrackLoadFailed
 
 if TYPE_CHECKING:
     from .client import Client
@@ -124,3 +127,39 @@ class BaseNode:
 
         await self.disconnect()
         del self._client.nodes[self.identifier]
+
+    #
+
+    async def search(self, *, query: str, raw: bool = False, retry: bool = True) -> Union[Optional[objects.Playlist], Optional[List[objects.Track]]]:
+
+        backoff = ExponentialBackoff(base=1)
+
+        for _ in range(5):
+
+            async with self.client.session.get(url=f'{self.http_url}/loadtracks?identifier={urllib.parse.quote(query)}', headers={'Authorization': self.password}) as response:
+
+                if response.status != 200:
+                    if retry:
+                        await asyncio.sleep(backoff.delay())
+                        continue
+                    else:
+                        raise TrackLoadError('Error while loading tracks.', data={'status_code': response.status})
+
+                data = await response.json()
+
+            if raw:
+                return data
+
+            load_type = data.pop('loadType')
+
+            if load_type == 'NO_MATCHES':
+                return None
+
+            elif load_type == 'LOAD_FAILED':
+                raise TrackLoadFailed(data=data)
+
+            elif load_type == 'PLAYLIST_LOADED':
+                return objects.Playlist(playlist_info=data.get('playlistInfo'), tracks=data.get('tracks'))
+
+            elif load_type in ['SEARCH_RESULT', 'TRACK_LOADED']:
+                return [objects.Track(track_id=track.get('track'), track_info=track.get('info')) for track in data.get('tracks')]
