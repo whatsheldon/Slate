@@ -1,7 +1,10 @@
 
 from __future__ import annotations
-
+from typing import TYPE_CHECKING, Protocol
 import json
+
+if TYPE_CHECKING:
+    from .player import Player
 
 
 class LavalinkStats:
@@ -115,8 +118,8 @@ class TrackStartEvent:
 
     def __init__(self, *, data: dict) -> None:
 
-        self.data = data
-        self.player = data.get('player')
+        self.data: dict = data
+        self.player: Protocol[Player] = data.get('player')
 
         self.track = data.get('track')
 
@@ -133,8 +136,8 @@ class TrackEndEvent:
 
     def __init__(self, *, data: dict) -> None:
 
-        self.data = data
-        self.player = data.get('player')
+        self.data: dict = data
+        self.player: Protocol[Player] = data.get('player')
 
         self.track = data.get('track')
         self.reason = data.get('reason')
@@ -154,8 +157,8 @@ class TrackExceptionEvent:
 
     def __init__(self, *, data: dict) -> None:
 
-        self.data = data
-        self.player = data.get('player')
+        self.data: dict = data
+        self.player: Protocol[Player] = data.get('player')
 
         self.track = data.get('track')
 
@@ -181,8 +184,8 @@ class TrackStuckEvent:
 
     def __init__(self, *, data: dict) -> None:
 
-        self.data = data
-        self.player = data.get('player')
+        self.data: dict = data
+        self.player: Protocol[Player] = data.get('player')
 
         self.track = data.get('track')
         self.threshold_ms = data.get('thresholdMs')
@@ -200,8 +203,8 @@ class WebSocketClosedEvent:
 
     def __init__(self, *, data: dict) -> None:
 
-        self.data = data
-        self.player = data.get('player')
+        self.data: dict = data
+        self.player: Protocol[Player] = data.get('player')
 
         self.reason = data.get('reason')
         self.code = data.get('code')

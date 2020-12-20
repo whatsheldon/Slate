@@ -8,13 +8,12 @@ from typing import Optional, TYPE_CHECKING
 import aiohttp
 import async_timeout
 
+from .bases import BaseNode
 from .exceptions import NodeConnectionClosed
 from .objects import AndesiteStats, LavalinkStats, Metadata
 
 if TYPE_CHECKING:
     from .client import Client
-
-from .bases import BaseNode
 
 
 class AndesiteNode(BaseNode):

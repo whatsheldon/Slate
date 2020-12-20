@@ -5,13 +5,12 @@ from typing import Optional, TYPE_CHECKING
 
 import aiohttp
 
+from .bases import BaseNode
 from .exceptions import NodeConnectionClosed
 from .objects import LavalinkStats
 
 if TYPE_CHECKING:
     from .client import Client
-
-from .bases import BaseNode
 
 
 class LavalinkNode(BaseNode):
