@@ -177,7 +177,7 @@ class Filter:
     @property
     def payload(self) -> Dict[str, Union[Dict[str, float], float]]:
 
-        payload = self.filter.payload if self.filter is not None else {}
+        payload = self.filter.payload.copy() if self.filter is not None else {}
 
         if self.volume is not None:
             payload['volume'] = self.volume
