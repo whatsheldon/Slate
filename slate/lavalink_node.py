@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Optional, TYPE_CHECKING
 
 import aiohttp
@@ -11,6 +12,8 @@ from .objects import LavalinkStats
 
 if TYPE_CHECKING:
     from .client import Client
+
+__log__ = logging.getLogger(__name__)
 
 
 class LavalinkNode(BaseNode):

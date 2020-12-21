@@ -4,15 +4,17 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2020 Axelancerr'
 __version__ = '0.1.0'
 
+import logging
 from collections import namedtuple
 
-version_info = namedtuple('VersionInfo', 'major minor micro releaselevel serial')(major=0, minor=1, micro=0, releaselevel='alpha', serial=0)
-
-from .client import Client
-from .bases import BaseNode
 from .andesite_node import AndesiteNode
-from .lavalink_node import LavalinkNode
-from .player import Player
-from .objects import Track, Playlist, TrackStartEvent, TrackEndEvent, TrackStuckEvent, TrackExceptionEvent, WebSocketClosedEvent
-from .filters import Filter, Karaoke, Timescale, Tremolo, Vibrato, Equalizer
+from .bases import BaseNode
+from .client import Client
 from .exceptions import *
+from .filters import Equalizer, Filter, Karaoke, Timescale, Tremolo, Vibrato
+from .lavalink_node import LavalinkNode
+from .objects import Playlist, Track, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, WebSocketClosedEvent
+from .player import Player
+
+version_info = namedtuple('VersionInfo', 'major minor micro releaselevel serial')(major=0, minor=1, micro=0, releaselevel='alpha', serial=0)
+logging.getLogger(__name__).addHandler(logging.NullHandler())

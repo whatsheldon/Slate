@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from abc import ABC
 from typing import List, Optional, Protocol
@@ -11,6 +12,8 @@ from discord import VoiceProtocol
 from . import filters, objects
 from .andesite_node import AndesiteNode
 from .bases import BaseNode
+
+__log__ = logging.getLogger(__name__)
 
 
 class Player(VoiceProtocol, ABC):

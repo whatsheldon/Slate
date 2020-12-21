@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import Optional, TYPE_CHECKING
 
@@ -14,6 +15,8 @@ from .objects import AndesiteStats, LavalinkStats, Metadata
 
 if TYPE_CHECKING:
     from .client import Client
+
+__log__ = logging.getLogger(__name__)
 
 
 class AndesiteNode(BaseNode):

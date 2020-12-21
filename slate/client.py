@@ -20,6 +20,8 @@ class Client:
 
     def __init__(self, *, bot: Protocol[discord.Client], session: aiohttp.ClientSession = None) -> None:
 
+        __log__.info('Shits happening!')
+
         self._bot: Protocol[discord.Client] = bot
         self._session: aiohttp.ClientSession = session or aiohttp.ClientSession()
 
@@ -70,6 +72,8 @@ class Client:
         else:
             node = cls(client=self, host=host, port=port, password=password, identifier=identifier)
 
+        __log__.debug(f'Creating \'{node.__name__}\' with identifier \'{identifier}\'.')
+
         await node.connect()
         return node
 
@@ -92,6 +96,8 @@ class Client:
 
         if channel.guild in self.players.keys():
             raise PlayerAlreadyExists(f'Player for guild \'{channel.guild}\' already exists.')
+
+        __log__.debug(f'Creating Player for guild {channel.guild}')
 
         player = await channel.connect(cls=Player)
         player._node = node
