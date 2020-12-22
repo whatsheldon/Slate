@@ -1,1 +1,2 @@
 sphinxcontrib-trio
+faculty-sphinx-theme
