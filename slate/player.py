@@ -101,10 +101,14 @@ class Player(VoiceProtocol, ABC):
 
     async def on_voice_server_update(self, data: dict) -> None:
 
+        __log__.debug(f'PLAYER | Received VOICE_SERVER_UPDATE from discord. | Data: {data}')
+
         self._voice_state.update({'event': data})
         await self._dispatch_voice_update()
 
     async def on_voice_state_update(self, data: dict) -> None:
+
+        __log__.debug(f'PLAYER | Received VOICE_STATE_UPDATE from discord. | Data: {data}')
 
         self._voice_state.update({'sessionId': data.get('session_id')})
 
@@ -125,6 +129,8 @@ class Player(VoiceProtocol, ABC):
 
     async def _update_state(self, *, state: dict) -> None:
 
+        __log__.debug(f'PLAYER | Updating player state. | State: {state}')
+
         self._last_time = state.get('time', 0)
         self._last_position = state.get('position', 0)
         self._last_update = time.time() * 1000
@@ -138,9 +144,12 @@ class Player(VoiceProtocol, ABC):
 
     def _dispatch_event(self, *, data: dict) -> None:
 
-        event = getattr(objects, data.pop('type'), None)
+        event = getattr(objects, data.get('type'), None)
         if not event:
-            return  # TODO Log the fact that we have an unknown event here.
+            __log__.warning(f'PLAYER | Unknown event type received. | Data: {data} ')
+            return
+
+        __log__.info(f'PLAYER | Dispatching {data.get("type")} event. | Data: {data}')
 
         data['player'] = self
         event = event(data=data)
@@ -150,7 +159,9 @@ class Player(VoiceProtocol, ABC):
     #
 
     async def connect(self, *, timeout: float, reconnect: bool) -> None:
+
         await self.guild.change_voice_state(channel=self.channel, self_deaf=True)
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} joined channel {self.channel!r}.')
 
     async def disconnect(self, *, force: bool = True) -> None:
 
@@ -158,14 +169,19 @@ class Player(VoiceProtocol, ABC):
             return
 
         await self.guild.change_voice_state(channel=None)
-        self.cleanup()
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} disconnected from voice channel {self.channel!r}.')
 
+        self.cleanup()
         self.channel = None
 
-    async def stop(self) -> None:
+    async def stop(self, force: bool = True) -> None:
+
+        if not force and not self.current:
+            return
 
         await self.node._send(op='stop', guildId=str(self.guild.id))
         self._current = None
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} ended the current track.')
 
     async def destroy(self) -> None:
 
@@ -175,6 +191,7 @@ class Player(VoiceProtocol, ABC):
             await self.stop()
             await self.node._send(op='destroy', guildId=str(self.guild.id))
 
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} was destroyed.')
         del self.node.players[self.guild.id]
 
     async def play(self, *, track: objects.Track, start: int = 0, end: int = 0, volume: int = None, no_replace: bool = False, pause: bool = False) -> None:
@@ -202,20 +219,28 @@ class Player(VoiceProtocol, ABC):
         await self.node._send(**payload)
         self._current = track
 
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} is playing the track {self._current!r}.')
+
     async def set_filter(self, *, filter: filters.Filter) -> None:
 
         await self.node._send(op='filters', guildId=str(self.guild.id), **filter.payload)
         self._filter = filter
+
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} is using the filter {self._filter!r}')
 
     async def set_volume(self, *, volume: int) -> None:
 
         await self.node._send(op='volume', guildId=str(self.guild.id), volume=volume)
         self._volume = volume
 
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} has set its volume to {self._volume}.')
+
     async def set_pause(self, *, pause: bool) -> None:
 
         await self.node._send(op='pause', guildId=str(self.guild.id), pause=pause)
         self._paused = pause
+
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} has set its paused status to {self._paused}.')
 
     async def set_position(self, *, position: int) -> None:
 
@@ -226,3 +251,4 @@ class Player(VoiceProtocol, ABC):
             return
 
         await self.node._send(op='seek', guildId=str(self.guild.id), position=position)
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} has set its position to {self.position}.')

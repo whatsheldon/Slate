@@ -107,17 +107,17 @@ class BaseNode:
         except Exception as error:
 
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 4001:
-                __log__.warning(f'Node \'{self.identifier}\' failed to connect due to invalid authorization.')
+                __log__.warning(f'NODE | Node \'{self.identifier}\' failed to connect due to invalid authorization.')
                 raise NodeConnectionError(f'Node \'{self.identifier}\' has invalid authorization.')
 
-            __log__.warning(f'Node \'{self.identifier}\' failed to connect. Error: {error}')
+            __log__.warning(f'NODE | Node \'{self.identifier}\' failed to connect. Error: {error}')
             raise NodeConnectionError(f'Node \'{self.identifier}\' was unable to connect. Reason: {error}')
 
         self._websocket = websocket
         self._client.nodes[self.identifier] = self
 
         self._task = asyncio.create_task(self._listen())
-        __log__.info(f'Node with identifier \'{self.identifier}\' connected successfully.')
+        __log__.info(f'NODE | Node with identifier \'{self.identifier}\' connected successfully.')
 
     async def disconnect(self) -> None:
 
@@ -132,14 +132,14 @@ class BaseNode:
         self._task = None
         self._websocket = None
 
-        __log__.info(f'Node with identifier \'{self.identifier}\' has been disconnected.')
+        __log__.info(f'NODE | Node with identifier \'{self.identifier}\' has been disconnected.')
 
     async def destroy(self) -> None:
 
         await self.disconnect()
         del self._client.nodes[self.identifier]
 
-        __log__.info(f'Node with identifier \'{self.identifier}\' was destroyed.')
+        __log__.info(f'NODE | Node with identifier \'{self.identifier}\' was destroyed.')
 
     #
 
@@ -154,11 +154,11 @@ class BaseNode:
                 if response.status != 200:
                     if retry:
                         time = backoff.delay()
-                        __log__.warning(f'LOADTRACKS | Non-200 status code while loading tracks. Retrying in {time}s. Status code: {response.status}')
+                        __log__.warning(f'LOADTRACKS | Non-200 status code while loading tracks. Retrying in {time}s. | Status code: {response.status}')
                         await asyncio.sleep(backoff.delay())
                         continue
                     else:
-                        __log__.error(f'LOADTRACKS | Non-200 status code error while loading tracks. Status code: {response.status}')
+                        __log__.error(f'LOADTRACKS | Non-200 status code while loading tracks. Not retrying. | Status code: {response.status}')
                         raise TrackLoadError('Error while loading tracks.', data={'status_code': response.status})
 
                 data = await response.json()
@@ -169,17 +169,17 @@ class BaseNode:
             load_type = data.pop('loadType')
 
             if load_type == 'NO_MATCHES':
-                __log__.debug(f'LOADTRACKS | No matches found for load_tracks. Query: {query}')
+                __log__.debug(f'LOADTRACKS | No matches found for query: {query}')
                 return None
 
             elif load_type == 'LOAD_FAILED':
-                __log__.warning(f'LOADTRACKS | LOAD_FAILED Error. Data: {data}')
+                __log__.warning(f'LOADTRACKS | Encountered a LOAD_FAILED while getting tracks for query: {query} | Data: {data}')
                 raise TrackLoadFailed(data=data)
 
             elif load_type == 'PLAYLIST_LOADED':
-                __log__.debug(f'LOADTRACKS | Playlist loaded. Name: {data.get("playlistInfo", {}).get("name")}')
+                __log__.debug(f'LOADTRACKS | Playlist loaded for query: {query} | Name: {data.get("playlistInfo", {}).get("name", "UNKNOWN")}')
                 return objects.Playlist(playlist_info=data.get('playlistInfo'), tracks=data.get('tracks'))
 
             elif load_type in ['SEARCH_RESULT', 'TRACK_LOADED']:
-                __log__.debug(f'LOADTRACKS | Tracks loaded. Amount: {len(data.get("tracks"))}')
+                __log__.debug(f'LOADTRACKS | Tracks loaded for query: {query} | Amount: {len(data.get("tracks"))}')
                 return [objects.Track(track_id=track.get('track'), track_info=track.get('info')) for track in data.get('tracks')]

@@ -51,19 +51,23 @@ class LavalinkNode(BaseNode):
 
             if message.type is aiohttp.WSMsgType.CLOSED:
                 await self.disconnect()
-                raise NodeConnectionClosed(f'Node \'{self.identifier}\' has closed. Reason: {message.extra}')
+                __log__.info(f'WEBSOCKET | Node \'{self.identifier}\'\'s websocket has been closed. | Reason: {message.extra}')
+                raise NodeConnectionClosed(f'Node \'{self.identifier}\' websocket has been closed. Reason: {message.extra}')
 
             message = message.json()
+            __log__.debug(f'WEBSOCKET | Node \'{self.identifier}\' received payload. | {message}')
 
             op = message.get('op', None)
             if not op:
-                continue  # TODO Log the fact that received a message with no 'op'.
+                __log__.warning(f'WEBSOCKET | Node \'{self.identifier}\' received payload with no op code. | Payload: {message}')
+                continue
 
             await self._handle_message(message=message)
 
     async def _handle_message(self, message: dict) -> None:
 
         op = message['op']
+        __log__.debug(f'WEBSOCKET | Node \'{self.identifier}\' received payload with op \'{op}\'. | Payload: {message}')
 
         if op == 'playerUpdate':
 
@@ -89,6 +93,7 @@ class LavalinkNode(BaseNode):
         if not self.is_connected:
             raise NodeConnectionClosed(f'Node \'{self.identifier}\' is not connected.')
 
+        __log__.debug(f'WEBSOCKET | Node \'{self.identifier}\' sent a \'{data.get("op")}\' payload. | Payload: {data}')
         await self._websocket.send_json(data)
 
     #

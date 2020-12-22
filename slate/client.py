@@ -65,14 +65,14 @@ class Client:
             raise NodeCreationError(f'Node with identifier \'{identifier}\' already exists.')
 
         if not issubclass(cls, BaseNode):
-            raise NodeCreationError('The \'node\' argument must be a subclass of \'slate.BaseNode\'.')
+            raise NodeCreationError(f'The \'node\' argument must be a subclass of \'{BaseNode.__name__}\'.')
 
         if issubclass(cls, AndesiteNode):
             node = cls(client=self, host=host, port=port, password=password, identifier=identifier, use_compatibility=use_compatibility)
         else:
             node = cls(client=self, host=host, port=port, password=password, identifier=identifier)
 
-        __log__.debug(f'Creating \'{node.__name__}\' with identifier \'{identifier}\'.')
+        __log__.debug(f'Node | Attempting \'{node.__name__}\' connection with identifier \'{identifier}\'.')
 
         await node.connect()
         return node
@@ -95,9 +95,9 @@ class Client:
             raise NodeNotFound(f'Node with identifier \'{node_identifier}\' was not found.')
 
         if channel.guild in self.players.keys():
-            raise PlayerAlreadyExists(f'Player for guild \'{channel.guild}\' already exists.')
+            raise PlayerAlreadyExists(f'Player for guild \'{channel.guild!r}\' already exists.')
 
-        __log__.debug(f'Creating Player for guild {channel.guild}')
+        __log__.debug(f'Player | Attempting player creation for guild: {channel.guild!r}')
 
         player = await channel.connect(cls=Player)
         player._node = node
