@@ -19,8 +19,7 @@ __log__ = logging.getLogger(__name__)
 class Client:
 
     def __init__(self, *, bot: Protocol[discord.Client], session: aiohttp.ClientSession = None) -> None:
-
-        __log__.info('Shits happening!')
+        """stuff"""
 
         self._bot: Protocol[discord.Client] = bot
         self._session: aiohttp.ClientSession = session or aiohttp.ClientSession()
@@ -34,6 +33,7 @@ class Client:
 
     @property
     def bot(self) -> Protocol[discord.Client]:
+        """Stuff"""
         return self._bot
 
     @property
