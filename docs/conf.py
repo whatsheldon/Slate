@@ -18,15 +18,17 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'slate.py'
-copyright = '2020 - Axel#3456'
 author = 'Axel#3456'
-release = '0.1.0'
+copyright = '2020 - Axel#3456'
+version = '0.1.0'
+release = version
 
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+
 extensions = [
     'faculty_sphinx_theme',
     'sphinx.ext.autodoc',
@@ -35,6 +37,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinxcontrib_trio',
 ]
+
+needs_sphinx = '3.4.0'
 
 autodoc_typehints = 'signature'
 autodoc_member_order = 'bysource'
