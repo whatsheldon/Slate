@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import MutableMapping, Optional, Protocol, Type
+from typing import MutableMapping, Optional, Protocol, Type, Mapping
 
 import aiohttp
 import discord
@@ -16,7 +16,8 @@ __log__ = logging.getLogger(__name__)
 
 
 class Client:
-    """The client used to manage Lavalink or Andesite nodes and their players.
+    """
+    The client used to manage Lavalink or Andesite nodes and their players.
 
     Parameters
     ----------
@@ -52,12 +53,14 @@ class Client:
 
     @property
     def nodes(self) -> MutableMapping[str, Protocol[BaseNode]]:
-        """A mapping of :py:attr:`BaseNode.identifier`'s to :py:class:`typing.Protocol` [ :py:class:`BaseNode` ]'s."""
+        """:py:class:`typing.MutableMapping` [ :py:class:`str` , :py:class:`typing.Protocol` [ :py:class:`BaseNode`] ]: A mapping of :py:attr:`BaseNode.identifier`'s to
+        :py:class:`typing.Protocol` [ :py:class:`BaseNode` ]'s that this client is currently managing"""
         return self._nodes
 
     @property
-    def players(self) -> MutableMapping[int, Protocol[Player]]:
-        """A mapping of :py:attr:`Player.guild.id`'s to :py:class:`typing.Protocol` [ :py:class:`Player` ]'s."""
+    def players(self) -> Mapping[int, Protocol[Player]]:
+        """:py:class:`typing.Mapping` [ :py:class:`int` , :py:class:`typing.Protocol` [ :py:class:`Player`] ]: A mapping of :py:attr:`Player.guild.id`'s to
+        :py:class:`typing.Protocol` [ :py:class:`Player` ]'s."""
 
         players = []
         for node in self.nodes.values():
@@ -67,8 +70,9 @@ class Client:
 
     #
 
-    async def create_node(self, *, host: str, port: str, password: str, identifier: str, cls: Protocol[Type[BaseNode]], **kwargs) -> Protocol[BaseNode]:
-        """Creates a :py:class:`Protocol` [ :py:class:`BaseNode` ] and attempts to connect to an external nodes websocket.
+    async def create_node(self, *, host: str, port: str, password: str, identifier: str, cls: Type[Protocol[BaseNode]], **kwargs) -> Protocol[BaseNode]:
+        """
+        Creates a Node and attempts to connect to an external (andesite, lavalink, etc) nodes websocket.
 
         Parameters
         ----------
@@ -80,14 +84,14 @@ class Client:
             The password used for authentification.
         identifier: :py:class:`str`
             A unique identifier used to refer to the created Node.
-        cls: :py:class:`Protocol` [ :py:class:`Type` [ :py:class:`BaseNode` ] ]
-            The class used to supply logic to connect to the external node with. Must be a subclass of :py:class:`BaseNode`.
+        cls: :py:class:`typing.Type` [ :py:class:`typing.Protocol` [ :py:class:`BaseNode` ] ]
+            The class used to connect to the external node. Must be a subclass of :py:class:`BaseNode`.
         **kwargs:
             Optional keyword arguments to pass to the created Node.
 
         Returns
         -------
-        :py:class:`Protocol` [ :py:class:`BaseNode` ]
+        :py:class:`typing.Protocol` [ :py:class:`BaseNode` ]
             The Node that was created.
 
         Raises
@@ -95,7 +99,7 @@ class Client:
         :py:class:`NodeCreationError`
             Either a Node with the given identifier already exists, or the given class was not a subclass of :py:class:`BaseNode`.
         :py:class:`NodeConnectionError`
-            There was an error while connecting to the external node. Could be invalid authorization or an incorrect host address/port, etc.
+            There was an error while connecting to the external node. Could mean there was invalid authorization or an incorrect host address/port, etc.
         """
 
         await self.bot.wait_until_ready()
@@ -112,18 +116,19 @@ class Client:
         await node.connect()
         return node
 
-    def get_node(self, *, identifier: str = None) -> Optional[Protocol[BaseNode]]:
-        """Attempts to return a :py:class:`Protocol` [ :py:class:`BaseNode` ] with the given identifier.
+    def get_node(self, *, identifier: Optional[str] = None) -> Optional[Protocol[BaseNode]]:
+        """
+        Returns the Node with the given identifier.
 
         Parameters
         ----------
-        identifier: :py:class:`Optional` [ :py:class:`str` ]
-            The identifier of the Node to return. If None a random Node will be returned.
+        identifier: :py:class:`typing.Optional` [ :py:class:`str` ]
+            The identifier of the Node to return. If not passed a random Node will be returned.
 
         Returns
         -------
-        :py:class:`Optional` [ :py:class:`Protocol` [ :py:class:`BaseNode` ] ]
-            The Node with the given identifier. Could return None if no Nodes are found.
+        :py:class:`typing.Optional` [ :py:class:`typing.Protocol` [ :py:class:`BaseNode` ] ]
+            The Node that was found. Could return :py:class:`None` if no Nodes with the identifier were found.
 
         Raises
         ------
@@ -140,21 +145,22 @@ class Client:
 
         return available_nodes.get(identifier, None)
 
-    async def create_player(self, *, channel: discord.VoiceChannel, node_identifier: str = None, cls: Optional[Protocol[Type[Player]]] = Player) -> Protocol[Player]:
-        """Creates a :py:class:`Protocol` [ :py:class:`Player` ] for the given :py:class:`discord.VoiceChannel`.
+    async def create_player(self, *, channel: discord.VoiceChannel, node_identifier: Optional[str] = None, cls: Optional[Type[Protocol[Player]]] = Player) -> Protocol[Player]:
+        """
+        Creates a Player for the given :py:class:`discord.VoiceChannel`.
 
         Parameters
         ----------
         channel: :py:class:`discord.VoiceChannel`
-            The discord voice channel to create the player for.
-        node_identifier: :py:class:`Optional` [ :py:class:`str` ]
-            An optional Node identifier to create the player with. If not passed a random Node will be chosen.
-        cls: :py:class:`Protocol` [ :py:class:`Type` [ :py:class:`Player` ] ]
-            The class used to base the player upon. Must be a subclass of :py:class:`Player`.
+            The discord voice channel to create and connect the Player to.
+        node_identifier: :py:class:`typing.Optional` [ :py:class:`str` ]
+            An optional Node identifier to create the player with. If not passed a random Node will be used.
+        cls: :py:class:`typing.Type` [ :py:class:`typing.Protocol` [ :py:class:`Player` ] ]
+            The class used to implement the base Player features. Must be a subclass of :py:class:`Player`. Defaults to the default Player supplied with Slate.
 
         Returns
         -------
-        :py:class:`Protocol` [ :py:class:`Player` ]
+        :py:class:`typing.Protocol` [ :py:class:`Player` ]
             The Player that was created.
 
         Raises
@@ -164,7 +170,7 @@ class Client:
         :py:class:`NodeNotFound`
             Raised if a Node with the given identifier was not found.
         :py:class:`PlayerAlreadyExists`
-            Raised if a player for the guild the :py:class:`discord.VoiceChannel` is in already exists.
+            Raised if a Player for the :py:class:`discord.VoiceChannel` already exists.
         """
 
         node = self.get_node(identifier=node_identifier)
@@ -183,7 +189,8 @@ class Client:
         return player
 
     def get_player(self, *, guild: discord.Guild) -> Optional[Protocol[Player]]:
-        """Attempts to return the :py:class:`Protocol` [ :py:class:`Player` ] for the given :py:class:`discord.Guild`
+        """
+        Returns the Player for the given :py:class:`discord.Guild`.
 
         Parameters
         ----------
@@ -192,7 +199,8 @@ class Client:
 
         Returns
         -------
-        :py:class:`Optional` [ :py:class:`Protocol` [ :py:class:`Player` ] ]
-            The Player for the given discord guild. Could be None if the guild does not already have a Player.
+        :py:class:`typing.Optional` [ :py:class:`typing.Protocol` [ :py:class:`Player` ] ]
+            The Player for the given discord guild. Could be :py:class:`None` if the guild does not already have a Player.
         """
+
         return self.players.get(guild.id, None)

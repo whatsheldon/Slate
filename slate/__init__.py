@@ -13,7 +13,7 @@ from .client import Client
 from .exceptions import *
 from .filters import Equalizer, Filter, Karaoke, Timescale, Tremolo, Vibrato
 from .lavalink_node import LavalinkNode
-from .objects import Playlist, Track, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, WebSocketClosedEvent
+from .objects import Playlist, Track, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, WebSocketClosedEvent, Metadata, LavalinkStats, AndesiteStats
 from .player import Player
 
 version_info = namedtuple('VersionInfo', 'major minor micro releaselevel serial')(major=0, minor=1, micro=0, releaselevel='alpha', serial=0)

@@ -21,13 +21,16 @@ BaseNode
 AndesiteNode
 ------------
 .. autoclass:: AndesiteNode
+    :inherited-members:
     :members:
     :undoc-members:
+
 
 
 LavalinkNode
 ------------
 .. autoclass:: LavalinkNode
+    :inherited-members:
     :members:
     :undoc-members:
 
@@ -102,9 +105,9 @@ TrackExceptionEvent
     :undoc-members:
 
 
-WebsocketClosedEvent
+WebSocketClosedEvent
 --------------------
-.. autoclass:: WebsocketClosedEvent
+.. autoclass:: WebSocketClosedEvent
     :members:
     :undoc-members:
 

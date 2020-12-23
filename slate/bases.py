@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 
+import abc
 import asyncio
 import logging
 import urllib.parse
@@ -16,10 +17,30 @@ if TYPE_CHECKING:
     from .client import Client
     from .player import Player
 
+
 __log__ = logging.getLogger(__name__)
 
 
-class BaseNode:
+class BaseNode(abc.ABC):
+    """
+    The abstract base class for creating a Node with. Nodes connect to an external node such as andesite or lavalink using custom logic defined in that nodes subclass type.
+    All nodes passed to :py:meth:`Client.create_node` must inherit from this class.
+
+    Parameters
+    ----------
+    client: :py:class:`Client`
+        The Slate client that this node is associated with.
+    host: :py:class:`str`
+        The host address of the external node that this Node should connect to.
+    port: :py:class:`port`
+        The port of the external node that this node should connect with.
+    password: :py:class:`str`
+        The password used for authentification with the external node.
+    identifier: :py:class:`str`
+        This Nodes unique custom identifier.
+    **kwargs
+        Custom keyword arguments that have been passed to this Node from :py:meth:`Client.create_node`
+    """
 
     def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, **kwargs) -> None:
 
@@ -46,52 +67,65 @@ class BaseNode:
 
     @property
     def client(self) -> Client:
+        """:py:class:`Client`: The slate Client that this Node is associated with."""
         return self._client
 
     @property
     def host(self) -> str:
+        """:py:class:`str`: The host address of the external node that this Node is connected to."""
         return self._host
 
     @property
     def port(self) -> str:
+        """:py:class:`str`: The port of the external node that this Node is connected with."""
         return self._port
 
     @property
     def password(self) -> str:
+        """:py:class:`str`: The password that this Node should use for authentification."""
         return self._password
 
     @property
     def identifier(self) -> str:
+        """:py:class:`str`: This Nodes unique identifier."""
         return self._identifier
 
     #
 
     @property
     def http_url(self) -> str:
+        """:py:class:`str`: The url used to make http requests with the external node."""
         return self._http_url
 
     @property
     def ws_url(self) -> str:
+        """:py:class:`str`: The url used for connecting to the external nodes websocket."""
         return self._ws_url
 
     @property
     def players(self) -> Dict[int, Protocol[Player]]:
+        """:py:class:`typing.MutableMapping` [ :py:class:`int` , :py:class:`typing.Protocol` [ :py:class:`Player`] ]: A mapping of :py:attr:`Player.guild.id`'s to
+        :py:class:`typing.Protocol` [ :py:class:`Player` ]'s that this Node is managing."""
         return self._players
 
     #
 
     @property
     def is_connected(self) -> bool:
+        """:py:class:`bool`: Whether or not this Node is connected to its external nodes websocket."""
         return self._websocket is not None and not self._websocket.closed
 
     #
 
+    @abc.abstractmethod
     async def _listen(self) -> None:
         pass
 
+    @abc.abstractmethod
     async def _handle_message(self, message: dict) -> None:
         pass
 
+    @abc.abstractmethod
     async def _send(self, **data) -> None:
         pass
 
