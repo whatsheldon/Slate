@@ -29,6 +29,8 @@ release = version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
+needs_sphinx = '3.4.0'
+
 extensions = [
     'faculty_sphinx_theme',
     'sphinx.ext.autodoc',
@@ -38,7 +40,8 @@ extensions = [
     'sphinxcontrib_trio',
 ]
 
-needs_sphinx = '3.4.0'
+napoleon_include_init_with_doc = True
+napoleon_include_private_with_doc = True  # TODO maybe change this
 
 autodoc_typehints = 'signature'
 autodoc_member_order = 'bysource'

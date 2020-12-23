@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Dict, MutableMapping, Optional, Protocol, Type
+import typing
+from typing import Dict, Mapping, Optional, Protocol, Type
 
 import aiohttp
 import discord
@@ -17,9 +18,17 @@ __log__ = logging.getLogger(__name__)
 
 
 class Client:
+    """The client used to manage Lavalink or Andesite nodes and their players.
 
-    def __init__(self, *, bot: Protocol[discord.Client], session: aiohttp.ClientSession = None) -> None:
-        """stuff"""
+    Parameters
+    ----------
+    bot: :py:class:`Protocol` [ :py:class:`discord.Client` ]
+        The bot instance that this :class:`Client` should be connected to.
+    session: :py:class:`Optional` [ :py:class:`aiohttp.ClientSession` ]
+        The aiohttp session used to make requests and connect to websockets. If not passed a new one will be made.
+    """
+
+    def __init__(self, *, bot: Protocol[discord.Client], session: Optional[aiohttp.ClientSession] = None) -> None:
 
         self._bot: Protocol[discord.Client] = bot
         self._session: aiohttp.ClientSession = session or aiohttp.ClientSession()
@@ -33,21 +42,24 @@ class Client:
 
     @property
     def bot(self) -> Protocol[discord.Client]:
-        """Stuff"""
+        """:py:class:`Protocol` [ :py:class:`discord.Client` ]: The bot instance that this :class:`Client` is connected to."""
         return self._bot
 
     @property
     def session(self) -> aiohttp.ClientSession:
+        """:py:class:`aiohttp.ClientSession`: The aiohttp session used to make requests and connect to :class:`BaseNode` websockets."""
         return self._session
 
     #
 
     @property
-    def nodes(self) -> MutableMapping[str, Protocol[BaseNode]]:
+    def nodes(self) -> Mapping[str, Protocol[BaseNode]]:
+        """A mapping of :py:attr:`BaseNode.identifier` to :py:class:`typing.Protocol` [ :py:class:`BaseNode` ]'s."""
         return self._nodes
 
     @property
-    def players(self) -> MutableMapping[int, Protocol[Player]]:
+    def players(self) -> Mapping[int, Protocol[Player]]:
+        """A mapping of :py:attr:`Player.guild.id` to :py:class:`typing.Protocol` [ :py:class:`Player` ]'s."""
 
         players = []
         for node in self.nodes.values():
@@ -57,7 +69,24 @@ class Client:
 
     #
 
-    async def create_node(self, *, host: str, port: str, password: str, identifier: str, use_compatibility: bool = False, cls: Protocol[Type[BaseNode]]) -> Protocol[BaseNode]:
+    async def create_node(self, *, host: str, port: str, password: str, identifier: str, cls: Protocol[Type[BaseNode]], **kwargs) -> Protocol[BaseNode]:
+        """Creates and attempts to connect to a :py:class:`Protocol` [ :py:class:`BaseNode` ].
+
+        Parameters
+        ----------
+        host: :py:class:`str`
+            The host address to attempt connection with.
+        port: :py:class:`int`
+            The port to attempt connection with.
+        password: :py:class:`str`
+            The password used for authentification.
+        identifier: :py:class:`str`
+            A unique identifier used to refer to the :py:class:`Protocol` [ :py:class:`BaseNode` ].
+        cls: :py:class:`Protocol` [ :py:class:`Type` [ :py:class:`BaseNode` ] ]
+            The class used to connect to the node with. Must be a subclass of :py:class:`BaseNode`.
+        **kwargs:
+            Optional keyword arguments to pass to the :py:class:`Protocol` [ :py:class:`BaseNode` ].
+        """
 
         await self.bot.wait_until_ready()
 
@@ -67,11 +96,7 @@ class Client:
         if not issubclass(cls, BaseNode):
             raise NodeCreationError(f'The \'node\' argument must be a subclass of \'{BaseNode.__name__}\'.')
 
-        if issubclass(cls, AndesiteNode):
-            node = cls(client=self, host=host, port=port, password=password, identifier=identifier, use_compatibility=use_compatibility)
-        else:
-            node = cls(client=self, host=host, port=port, password=password, identifier=identifier)
-
+        node = cls(client=self, host=host, port=port, password=password, identifier=identifier, **kwargs)
         __log__.debug(f'Node | Attempting \'{node.__name__}\' connection with identifier \'{identifier}\'.')
 
         await node.connect()

@@ -21,8 +21,8 @@ __log__ = logging.getLogger(__name__)
 
 class AndesiteNode(BaseNode):
 
-    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, use_compatibility: bool = False) -> None:
-        super().__init__(client=client, host=host, port=port, password=password, identifier=identifier)
+    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, use_compatibility: bool = False, **kwargs) -> None:
+        super().__init__(client=client, host=host, port=port, password=password, identifier=identifier, **kwargs)
 
         self._use_compatibility: bool = use_compatibility
 

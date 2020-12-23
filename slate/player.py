@@ -47,6 +47,7 @@ class Player(VoiceProtocol, ABC):
 
     @property
     def guild(self) -> discord.Guild:
+        """:py:class:`discord.Guild`: The guild that this :py:class:`Player` is connected to."""
         return self._guild
 
     @property

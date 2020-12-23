@@ -18,8 +18,8 @@ __log__ = logging.getLogger(__name__)
 
 class LavalinkNode(BaseNode):
 
-    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str) -> None:
-        super().__init__(client=client, host=host, port=port, password=password, identifier=identifier)
+    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, **kwargs) -> None:
+        super().__init__(client=client, host=host, port=port, password=password, identifier=identifier, **kwargs)
 
         self._http_url: str = f'http://{self._host}:{self._port}/'
         self._ws_url: str = f'ws://{self._host}:{self._port}/'

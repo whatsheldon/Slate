@@ -21,7 +21,7 @@ __log__ = logging.getLogger(__name__)
 
 class BaseNode:
 
-    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str) -> None:
+    def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, **kwargs) -> None:
 
         self._client: Client = client
         self._host: str = host
