@@ -23,7 +23,7 @@ class NodeNotFound(NodeException):
     pass
 
 
-class NoNodesFound(NodeException):
+class NoNodesAvailable(NodeException):
     pass
 
 

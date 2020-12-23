@@ -114,7 +114,7 @@ class BaseNode:
             raise NodeConnectionError(f'Node \'{self.identifier}\' was unable to connect. Reason: {error}')
 
         self._websocket = websocket
-        self._client.nodes[self.identifier] = self
+        self._client._nodes[self.identifier] = self
 
         self._task = asyncio.create_task(self._listen())
         __log__.info(f'NODE | Node with identifier \'{self.identifier}\' connected successfully.')

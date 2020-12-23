@@ -257,7 +257,7 @@ class Track:
         return self._author
 
     @property
-    def length(self) -> float:
+    def length(self) -> int:
         return self._length
 
     @property
@@ -277,7 +277,7 @@ class Track:
         return self._is_seekable
 
     @property
-    def position(self) -> float:
+    def position(self) -> int:
         return self._position
 
     #

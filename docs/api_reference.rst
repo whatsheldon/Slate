@@ -39,6 +39,76 @@ Player
     :undoc-members:
 
 
+Track
+-----
+.. autoclass:: Track
+    :members:
+    :undoc-members:
+
+
+Playlist
+--------
+.. autoclass:: Playlist
+    :members:
+    :undoc-members:
+
+
+LavalinkStats
+-------------
+.. autoclass:: LavalinkStats
+    :members:
+    :undoc-members:
+
+
+AndesiteStats
+-------------
+.. autoclass:: AndesiteStats
+    :members:
+    :undoc-members:
+
+
+Metadata
+--------
+.. autoclass:: Metadata
+    :members:
+    :undoc-members:
+
+
+TrackStartEvent
+---------------
+.. autoclass:: TrackStartEvent
+    :members:
+    :undoc-members:
+
+
+TrackEndEvent
+-------------
+.. autoclass:: TrackEndEvent
+    :members:
+    :undoc-members:
+
+
+TrackStuckEvent
+---------------
+.. autoclass:: TrackStuckEvent
+    :members:
+    :undoc-members:
+
+
+TrackExceptionEvent
+-------------------
+.. autoclass:: TrackExceptionEvent
+    :members:
+    :undoc-members:
+
+
+WebsocketClosedEvent
+--------------------
+.. autoclass:: WebsocketClosedEvent
+    :members:
+    :undoc-members:
+
+
 Filter
 ------
 .. autoclass:: Filter
@@ -79,6 +149,8 @@ Vibrato
 .. autoclass:: Vibrato
     :members:
     :undoc-members:
+
+
 
 
 
