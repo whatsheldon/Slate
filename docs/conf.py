@@ -14,6 +14,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.append(os.path.abspath('extensions'))
 
 # -- Project information -----------------------------------------------------
 
@@ -38,6 +39,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinxcontrib_trio',
+    'resourcelinks'
 ]
 
 napoleon_include_init_with_doc = True
@@ -51,7 +53,7 @@ extlinks = {
 }
 
 intersphinx_mapping = {
-    'py':      ('https://docs.python.org/3', None),
+    'py':      ('https://docs.python.org/3.9', None),
     'aiohttp': ('https://docs.aiohttp.org/en/stable/', None),
     'dpy':     ('https://discordpy.readthedocs.io/en/latest/', None)
 }
@@ -93,4 +95,6 @@ resource_links = {
     'discord':     'https://discord.gg/xP8xsHr',
     'issues':      'https://github.com/Axelancerr/Slate/issues',
     'discussions': 'https://github.com/Axelancerr/Slate/discussions',
+    'andesite':    'https://github.com/natanbc/andesite',
+    'lavalink':    'https://github.com/Frederikam/Lavalink'
 }

@@ -20,6 +20,27 @@ __log__ = logging.getLogger(__name__)
 
 
 class AndesiteNode(BaseNode):
+    """
+    An implementation of :py:class:`BaseNode` that allows connection to :resource:`Andesite <andesite>` nodes with support for their :resource:`Lavalink <lavalink>`
+    compatibility mode.
+
+    Parameters
+    ----------
+    client: :py:class:`Client`
+        The Slate Client that this Node is associated with.
+    host: :py:class:`str`
+        The host address of the external node that this Node should connect to.
+    port: :py:class:`port`
+        The port of the external node that this node should connect with.
+    password: :py:class:`str`
+        The password used for authentification with the external node.
+    identifier: :py:class:`str`
+        This Nodes unique identifier.
+    use_compatibility: :py:class:`bool`
+        Whether or not this node should use the :resource:`Lavalink <lavalink>` compatible websocket.`
+    **kwargs
+        Custom keyword arguments that have been passed to this Node from :py:meth:`Client.create_node`
+    """
 
     def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, use_compatibility: bool = False, **kwargs) -> None:
         super().__init__(client=client, host=host, port=port, password=password, identifier=identifier, **kwargs)
@@ -53,24 +74,47 @@ class AndesiteNode(BaseNode):
 
     @property
     def use_compatibility(self) -> bool:
+        """
+        :py:class:`bool`:
+            Whether or not this Node is using the :resource:`Lavalink <lavalink>` compatible websocket.
+        """
         return self._use_compatibility
 
     #
 
     @property
-    def connection_id(self) -> int:
+    def connection_id(self) -> Optional[int]:
+        """
+        :py:class:`typing.Optional` [ :py:class:`int` ]:
+            The connection id sent on connection with :resource:`Andesite <andesite>`. This could be :py:class:`None` if :py:attr:`AndesiteNode.use_compatibility` is
+            :py:class:`True`.
+        """
         return self._connection_id
 
     @property
     def metadata(self) -> Optional[Metadata]:
+        """
+        :py:class:`typing.Optional` [ :py:class:`Metadata` ]:
+            Metadata sent from :resource:`Andesite <andesite>` that contains version information and node information. This could be :py:class:`None` if
+            :py:attr:`AndesiteNode.use_compatibility` is :py:class:`True`.
+        """
         return self._metadata
 
     @property
     def andesite_stats(self) -> Optional[AndesiteStats]:
+        """
+        :py:class:`typing.Optional` [ :py:class:`AndesiteStats` ]:
+            Stats sent from :resource:`Andesite <andesite>` that contains information about the system and current status. These stats are sent from andesite upon using
+            :py:meth:`AndesiteNode.request_andesite_stats`.
+        """
         return self._andesite_stats
 
     @property
     def lavalink_stats(self) -> Optional[LavalinkStats]:
+        """
+        :py:class:`typing.Optional` [ :py:class:`LavalinkStats` ]:
+            Stats sent from :resource:`Andesite <andesite>` when using the :resource:`Lavalink <lavalink>` compatible websocket. These stats are sent every 30ish seconds or so.
+        """
         return self._lavalink_stats
 
     #
@@ -146,6 +190,19 @@ class AndesiteNode(BaseNode):
     #
 
     async def ping(self) -> float:
+        """
+        Returns the latency between this Node and its websocket in milliseconds. This works on both the lavalink compatible websocket and the normal websocket.
+
+        Returns
+        -------
+        :py:class:`float`
+            The latency in milliseconds.
+
+        Raises
+        ------
+        :py:class:`asyncio.TimeoutError`
+            Requesting the latency took over 30 seconds.
+        """
 
         start_time = time.time()
         await self._send(op='ping')
@@ -159,6 +216,19 @@ class AndesiteNode(BaseNode):
         return end_time - start_time
 
     async def request_andesite_stats(self) -> AndesiteStats:
+        """
+        Requests andesite stats from the node. This works on both the lavalink compatible websocket and the normal websocket.
+
+        Returns
+        -------
+        :py:class:`AndesiteStats`
+            The stats that were returned.
+
+        Raises
+        ------
+        :py:class:`asyncio.TimeoutError`
+            Requesting the stats took over 30 seconds.
+        """
 
         await self._send(op='get-stats')
 
@@ -167,5 +237,3 @@ class AndesiteNode(BaseNode):
 
         self._andesite_stats_event.clear()
         return self._andesite_stats
-
-    #

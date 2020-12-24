@@ -17,14 +17,14 @@ __log__ = logging.getLogger(__name__)
 
 class Client:
     """
-    The client used to manage Lavalink or Andesite nodes and their players.
+    The client used to manage Nodes and Players.
 
     Parameters
     ----------
-    bot: :py:class:`Protocol` [ :py:class:`discord.Client` ]
-        The bot instance that this :class:`Client` should be connected to.
-    session: :py:class:`Optional` [ :py:class:`aiohttp.ClientSession` ]
-        The aiohttp session used to make requests and connect to websockets with. If not passed, a new one will be made.
+    bot: :py:class:`typing.Protocol` [ :py:class:`discord.Client` ]
+        The bot instance that this :class:`Client` should be associated with.
+    session: :py:class:`typing.Optional` [ :py:class:`aiohttp.ClientSession` ]
+        The aiohttp client session used to make requests and connect to websockets with. If not passed, a new client session will be made.
     """
 
     def __init__(self, *, bot: Protocol[discord.Client], session: Optional[aiohttp.ClientSession] = None) -> None:
@@ -41,26 +41,37 @@ class Client:
 
     @property
     def bot(self) -> Protocol[discord.Client]:
-        """:py:class:`Protocol` [ :py:class:`discord.Client` ]: The bot instance that this :class:`Client` is connected to."""
+        """
+        :py:class:`Protocol` [ :py:class:`discord.Client` ]:
+            The bot instance that this :class:`Client` is connected to.
+        """
         return self._bot
 
     @property
     def session(self) -> aiohttp.ClientSession:
-        """:py:class:`aiohttp.ClientSession`: The aiohttp session used to make requests and connect to Node websockets with."""
+        """
+        :py:class:`aiohttp.ClientSession`:
+            The aiohttp session used to make requests and connect to Node websockets with.
+        """
         return self._session
 
     #
 
     @property
     def nodes(self) -> MutableMapping[str, Protocol[BaseNode]]:
-        """:py:class:`typing.MutableMapping` [ :py:class:`str` , :py:class:`typing.Protocol` [ :py:class:`BaseNode`] ]: A mapping of :py:attr:`BaseNode.identifier`'s to
-        :py:class:`typing.Protocol` [ :py:class:`BaseNode` ]'s that this client is currently managing"""
+        """
+        :py:class:`typing.MutableMapping` [ :py:class:`str` , :py:class:`typing.Protocol` [ :py:class:`BaseNode` ] ]:
+            A mapping of Node identifier's to Nodes that this Client is managing.
+        """
+
         return self._nodes
 
     @property
     def players(self) -> Mapping[int, Protocol[Player]]:
-        """:py:class:`typing.Mapping` [ :py:class:`int` , :py:class:`typing.Protocol` [ :py:class:`Player`] ]: A mapping of :py:attr:`Player.guild.id`'s to
-        :py:class:`typing.Protocol` [ :py:class:`Player` ]'s."""
+        """
+        :py:class:`typing.Mapping` [ :py:class:`int` , :py:class:`typing.Protocol` [ :py:class:`Player`] ]:
+            A mapping of Player guild id's to Players across all the nodes that this Client is managing.
+        """
 
         players = []
         for node in self.nodes.values():
@@ -72,7 +83,7 @@ class Client:
 
     async def create_node(self, *, host: str, port: str, password: str, identifier: str, cls: Type[Protocol[BaseNode]], **kwargs) -> Protocol[BaseNode]:
         """
-        Creates a Node and attempts to connect to an external (andesite, lavalink, etc) nodes websocket.
+        Creates a Node and attempts to connect to an external nodes websocket. (:resource:`Andesite <andesite>`, :resource:`Lavalink <lavalink>`, etc)
 
         Parameters
         ----------
@@ -128,7 +139,7 @@ class Client:
         Returns
         -------
         :py:class:`typing.Optional` [ :py:class:`typing.Protocol` [ :py:class:`BaseNode` ] ]
-            The Node that was found. Could return :py:class:`None` if no Nodes with the identifier were found.
+            The Node that was found. Could return :py:class:`None` if no Nodes with the given identifier were found.
 
         Raises
         ------
@@ -152,11 +163,11 @@ class Client:
         Parameters
         ----------
         channel: :py:class:`discord.VoiceChannel`
-            The discord voice channel to create and connect the Player to.
+            The discord voice channel to connect the Player too.
         node_identifier: :py:class:`typing.Optional` [ :py:class:`str` ]
-            An optional Node identifier to create the player with. If not passed a random Node will be used.
+            A Node identifier to create the Player on. If not passed a random Node will be chosen.
         cls: :py:class:`typing.Type` [ :py:class:`typing.Protocol` [ :py:class:`Player` ] ]
-            The class used to implement the base Player features. Must be a subclass of :py:class:`Player`. Defaults to the default Player supplied with Slate.
+            The class used to implement the base Player features. Must be a subclass of :py:class:`Player`. Defaults to the Player supplied with Slate.
 
         Returns
         -------
@@ -165,12 +176,12 @@ class Client:
 
         Raises
         ------
-        :py:class:`NoNodesAvailable`
-            Raised if there are no Nodes available.
         :py:class:`NodeNotFound`
             Raised if a Node with the given identifier was not found.
+        :py:class:`NoNodesAvailable`
+            Raised if there are no Nodes available.
         :py:class:`PlayerAlreadyExists`
-            Raised if a Player for the :py:class:`discord.VoiceChannel` already exists.
+            Raised if a Player for the voice channel already exists.
         """
 
         node = self.get_node(identifier=node_identifier)

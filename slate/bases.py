@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Protocol, TYPE_CHECKING, Union
 
 import aiohttp
 
-from . import objects
+from .objects import Track, Playlist
 from .backoff import ExponentialBackoff
 from .exceptions import NodeConnectionError, TrackLoadError, TrackLoadFailed
 
@@ -23,13 +23,13 @@ __log__ = logging.getLogger(__name__)
 
 class BaseNode(abc.ABC):
     """
-    The abstract base class for creating a Node with. Nodes connect to an external node such as andesite or lavalink using custom logic defined in that nodes subclass type.
-    All nodes passed to :py:meth:`Client.create_node` must inherit from this class.
+    The abstract base class for creating a Node with. Nodes connect to an external nodes websocket such as (:resource:`Andesite <andesite>` or :resource:`Lavalink <lavalink>`
+    using custom logic defined in that Nodes subclass. All Nodes passed to :py:meth:`Client.create_node` must inherit from this class.
 
     Parameters
     ----------
     client: :py:class:`Client`
-        The Slate client that this node is associated with.
+        The Slate Client that this Node is associated with.
     host: :py:class:`str`
         The host address of the external node that this Node should connect to.
     port: :py:class:`port`
@@ -37,7 +37,7 @@ class BaseNode(abc.ABC):
     password: :py:class:`str`
         The password used for authentification with the external node.
     identifier: :py:class:`str`
-        This Nodes unique custom identifier.
+        This Nodes unique identifier.
     **kwargs
         Custom keyword arguments that have been passed to this Node from :py:meth:`Client.create_node`
     """
@@ -67,52 +67,78 @@ class BaseNode(abc.ABC):
 
     @property
     def client(self) -> Client:
-        """:py:class:`Client`: The slate Client that this Node is associated with."""
+        """
+        :py:class:`Client`:
+            The slate Client that this Node is associated with.
+        """
         return self._client
 
     @property
     def host(self) -> str:
-        """:py:class:`str`: The host address of the external node that this Node is connected to."""
+        """
+        :py:class:`str`:
+            The host address of the external node that this Node should connect to.
+        """
         return self._host
 
     @property
     def port(self) -> str:
-        """:py:class:`str`: The port of the external node that this Node is connected with."""
+        """
+        :py:class:`str`:
+            The port of the external node that this node should connect with.
+        """
         return self._port
 
     @property
     def password(self) -> str:
-        """:py:class:`str`: The password that this Node should use for authentification."""
+        """
+        :py:class:`str`:
+            The password used for authentification with the external node.
+        """
         return self._password
 
     @property
     def identifier(self) -> str:
-        """:py:class:`str`: This Nodes unique identifier."""
+        """
+        :py:class:`str`:
+            This Nodes unique identifier.
+        """
         return self._identifier
 
     #
 
     @property
     def http_url(self) -> str:
-        """:py:class:`str`: The url used to make http requests with the external node."""
+        """
+        :py:class:`str`:
+            The url used to make http requests with the external node.
+        """
         return self._http_url
 
     @property
     def ws_url(self) -> str:
-        """:py:class:`str`: The url used for connecting to the external nodes websocket."""
+        """
+        :py:class:`str`:
+            The url used for connecting to the external nodes websocket.
+        """
         return self._ws_url
 
     @property
     def players(self) -> Dict[int, Protocol[Player]]:
-        """:py:class:`typing.MutableMapping` [ :py:class:`int` , :py:class:`typing.Protocol` [ :py:class:`Player`] ]: A mapping of :py:attr:`Player.guild.id`'s to
-        :py:class:`typing.Protocol` [ :py:class:`Player` ]'s that this Node is managing."""
+        """
+        :py:class:`typing.Mapping` [ :py:class:`int` , :py:class:`typing.Protocol` [ :py:class:`Player`] ]:
+            A mapping of Player guild id's to Players that this Node is managing.
+        """
         return self._players
 
     #
 
     @property
     def is_connected(self) -> bool:
-        """:py:class:`bool`: Whether or not this Node is connected to its external nodes websocket."""
+        """
+        :py:class:`bool`:
+            Whether or not this Node is connected to it's external node's websocket.
+        """
         return self._websocket is not None and not self._websocket.closed
 
     #
@@ -132,6 +158,13 @@ class BaseNode(abc.ABC):
     #
 
     async def connect(self) -> None:
+        """Connects this Node to it's external websocket.
+
+        Raises
+        ------
+        :py:class:`NodeConnectionError`:
+            There was an error while connecting to the websocket, could be invalid authorization or an unreachable/invalid host address or port, etc.
+        """
 
         await self.client.bot.wait_until_ready()
 
@@ -154,21 +187,22 @@ class BaseNode(abc.ABC):
         __log__.info(f'NODE | Node with identifier \'{self.identifier}\' connected successfully.')
 
     async def disconnect(self) -> None:
+        """Disconnects this Node from it's websocket and destroys all it's Players."""
 
         for player in self._players.copy().values():
             await player.destroy()
 
         if self.is_connected:
             await self._websocket.close()
+        self._websocket = None
 
         self._task.cancel()
-
         self._task = None
-        self._websocket = None
 
         __log__.info(f'NODE | Node with identifier \'{self.identifier}\' has been disconnected.')
 
     async def destroy(self) -> None:
+        """Calls :py:meth:`BaseNode.disconnect` and removes the Node from it's Client."""
 
         await self.disconnect()
         del self._client.nodes[self.identifier]
@@ -177,7 +211,31 @@ class BaseNode(abc.ABC):
 
     #
 
-    async def search(self, *, query: str, raw: bool = False, retry: bool = True) -> Union[Optional[objects.Playlist], Optional[List[objects.Track]]]:
+    async def search(self, *, query: str, retry: bool = True, raw: bool = False) -> Optional[Union[Playlist, List[Track], dict]]:
+        """
+        Searches for and returns a list of :py:class:`Track`'s or a :py:class:`Playlist`.
+
+        Parameters
+        ----------
+        query: str
+            The query to search with. Could be a link or a search term if prepended with "scsearch:" (Soundcloud) or "ytsearch:" (Youtube).
+        retry: :py:class:`typing.Optional` [ :py:class:`bool` ]
+            Whether or not to retry the search if a non-200 status code is received. If :py:class:`True` the search will be retried upto 5 times, with an exponential backoff between each time.
+        raw: :py:class:`typing.Optional` [ :py:class:`bool` ]
+            Whether or not to return the raw json result of the search.
+
+        Returns
+        -------
+        :py:class:`typing.Optional` [ :py:class:`typing.Union` [ :py:class:`Playlist` , :py:class:`List` [ :py:class:`Track` ] , :py:class:`dict` ] ]:
+            The raw json result, list of Tracks, or Playlist that was found.
+
+        Raises
+        ------
+        :py:class:`TrackLoadError`:
+            The server sent a non-200 HTTP status code while loading tracks.
+        :py:class:`TrackLoadFailed`:
+            The server did not error, but there was some kind of other problem while loading tracks. Could be a restricted video, youtube ratelimit, etc.
+        """
 
         backoff = ExponentialBackoff(base=1)
 
@@ -192,8 +250,8 @@ class BaseNode(abc.ABC):
                         await asyncio.sleep(backoff.delay())
                         continue
                     else:
-                        __log__.error(f'LOADTRACKS | Non-200 status code while loading tracks. Not retrying. | Status code: {response.status}')
-                        raise TrackLoadError('Error while loading tracks.', data={'status_code': response.status})
+                        __log__.error(f'LOADTRACKS | Non-200 status code error while loading tracks. Not retrying. | Status code: {response.status}')
+                        raise TrackLoadError('Non-200 status code error while loading tracks.', data={'status_code': response.status})
 
                 data = await response.json()
 
@@ -212,8 +270,11 @@ class BaseNode(abc.ABC):
 
             elif load_type == 'PLAYLIST_LOADED':
                 __log__.debug(f'LOADTRACKS | Playlist loaded for query: {query} | Name: {data.get("playlistInfo", {}).get("name", "UNKNOWN")}')
-                return objects.Playlist(playlist_info=data.get('playlistInfo'), tracks=data.get('tracks'))
+                return Playlist(playlist_info=data.get('playlistInfo'), tracks=data.get('tracks'))
 
             elif load_type in ['SEARCH_RESULT', 'TRACK_LOADED']:
                 __log__.debug(f'LOADTRACKS | Tracks loaded for query: {query} | Amount: {len(data.get("tracks"))}')
-                return [objects.Track(track_id=track.get('track'), track_info=track.get('info')) for track in data.get('tracks')]
+                return [Track(track_id=track.get('track'), track_info=track.get('info')) for track in data.get('tracks')]
+
+        __log__.error(f'LOADTRACKS | Non-200 status code error while loading tracks. Not retrying. | Status code: {response.status}')
+        raise TrackLoadError('Non-200 status code error while loading tracks.', data={'status_code': response.status})
