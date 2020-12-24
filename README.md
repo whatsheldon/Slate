@@ -1,6 +1,6 @@
 # Slate
 Slate is an (at the moment) [Lavalink](https://github.com/Frederikam/Lavalink/) and [Andesite](https://github.com/natanbc/andesite) compatible python library for use with the 
-commands extensions of [discord.py](https://github.com/Rapptz/discord.py).
+commands extension of [discord.py](https://github.com/Rapptz/discord.py).
 
 # Support
 Support for using Slate can be found in my [discord server](https://discord.com/invite/xP8xsHr), or by opening an issue on this github.
