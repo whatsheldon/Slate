@@ -17,6 +17,24 @@ __log__ = logging.getLogger(__name__)
 
 
 class LavalinkNode(BaseNode):
+    """
+    An implementation of :py:class:`BaseNode` that allows connection to :resource:`Lavalink <lavalink>` nodes.
+
+    Parameters
+    ----------
+    client: :py:class:`Client`
+        The Slate Client that this Node is associated with.
+    host: :py:class:`str`
+        The host address of the external node that this Node should connect to.
+    port: :py:class:`port`
+        The port of the external node that this node should connect with.
+    password: :py:class:`str`
+        The password used for authentification with the external node.
+    identifier: :py:class:`str`
+        This Nodes unique identifier.
+    **kwargs
+        Custom keyword arguments that have been passed to this Node from :py:meth:`Client.create_node`
+    """
 
     def __init__(self, *, client: Client, host: str, port: str, password: str, identifier: str, **kwargs) -> None:
         super().__init__(client=client, host=host, port=port, password=password, identifier=identifier, **kwargs)
@@ -39,6 +57,10 @@ class LavalinkNode(BaseNode):
 
     @property
     def lavalink_stats(self) -> Optional[LavalinkStats]:
+        """
+        :py:class:`typing.Optional` [ :py:class:`LavalinkStats` ]:
+            Stats sent from :resource:`Lavalink <lavalink>`. These stats are sent every 30ish seconds or so.
+        """
         return self._lavalink_stats
 
     #

@@ -10,3 +10,7 @@ Documentation Contents:
     :maxdepth: 5
 
     api_reference
+    objects
+    events
+    filters
+    exceptions
