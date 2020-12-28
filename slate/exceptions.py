@@ -122,3 +122,29 @@ class TrackLoadError(SlateException):
             The HTTP status code returned for the search operation.
         """
         return self._status_code
+
+
+class TrackDecodeError(SlateException):
+
+    def __init__(self, message: str, data: dict) -> None:
+
+        self._message = message
+        self._data = data
+
+        self._status_code = data.get('status_code')
+
+    @property
+    def message(self) -> str:
+        """
+        :py:class:`str`:
+            A message for what happened to cause this error.
+        """
+        return self._message
+
+    @property
+    def status_code(self) -> int:
+        """
+        :py:class:`int`:
+            The HTTP status code returned for the search operation.
+        """
+        return self._status_code

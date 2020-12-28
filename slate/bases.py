@@ -11,7 +11,7 @@ import aiohttp
 
 from .objects import Track, Playlist
 from .backoff import ExponentialBackoff
-from .exceptions import NodeConnectionError, TrackLoadError, TrackLoadFailed
+from .exceptions import NodeConnectionError, TrackLoadError, TrackLoadFailed, TrackDecodeError
 
 if TYPE_CHECKING:
     from .client import Client
@@ -297,16 +297,16 @@ class BaseNode(abc.ABC):
                         continue
                     else:
                         __log__.error(f'DECODETRACKS | Non-200 status code error while decoding tracks. Not retrying. | Status code: {response.status}')
-                        raise TrackLoadError('Non-200 status code error while decoding tracks.', data={'status_code': response.status})
+                        raise TrackDecodeError('Non-200 status code error while decoding tracks.', data={'status_code': response.status})
 
                 data = await response.json()
 
             if raw:
                 return data
 
-            return Track(track_id=track_id, track_info=data)
+            return Track(track_id=track_id, track_info=data.get('info', None) or data)
 
         __log__.error(f'DECODETRACKS | Non-200 status code error while decoding tracks. All 5 retries used. | Status code: {response.status}')
-        raise TrackLoadError('Non-200 status code error while decoding tracks.', data={'status_code': response.status})
+        raise TrackDecodeError('Non-200 status code error while decoding tracks.', data={'status_code': response.status})
 
 

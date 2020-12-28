@@ -11,7 +11,7 @@ from .andesite_node import AndesiteNode
 from .bases import BaseNode
 from .client import Client
 from .exceptions import NoNodesAvailable, NodeConnectionClosed, NodeConnectionError, NodeCreationError, NodeException, NodeNotFound, PlayerAlreadyExists, SlateException, \
-                        TrackLoadError, TrackLoadFailed
+                        TrackLoadError, TrackLoadFailed, TrackDecodeError
 from .filters import Equalizer, Filter, Karaoke, Timescale, Tremolo, Vibrato
 from .lavalink_node import LavalinkNode
 from .objects import AndesiteStats, LavalinkStats, Metadata, Playlist, Track, TrackEndEvent, TrackExceptionEvent, TrackStartEvent, TrackStuckEvent, WebSocketClosedEvent
