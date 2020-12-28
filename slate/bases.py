@@ -211,7 +211,7 @@ class BaseNode(abc.ABC):
 
     #
 
-    async def search(self, *, query: str, retry: bool = True, raw: bool = False) -> Optional[Union[Playlist, List[Track], dict]]:
+    async def search(self, *, query: str, retry: bool = True, raw: bool = False) -> Optional[Union[Playlist, List[Track], Dict]]:
         """
         Searches for and returns a list of :py:class:`Track`'s or a :py:class:`Playlist`.
 
@@ -241,7 +241,8 @@ class BaseNode(abc.ABC):
 
         for _ in range(5):
 
-            async with self.client.session.get(url=f'{self.http_url}/loadtracks?identifier={urllib.parse.quote(query)}', headers={'Authorization': self.password}) as response:
+            params = {'identifier': urllib.parse.quote(query)}
+            async with self.client.session.get(url=f'{self.http_url}/loadtracks', headers={'Authorization': self.password}, params=params) as response:
 
                 if response.status != 200:
                     if retry:
@@ -276,5 +277,36 @@ class BaseNode(abc.ABC):
                 __log__.debug(f'LOADTRACKS | Tracks loaded for query: {query} | Amount: {len(data.get("tracks"))}')
                 return [Track(track_id=track.get('track'), track_info=track.get('info')) for track in data.get('tracks')]
 
-        __log__.error(f'LOADTRACKS | Non-200 status code error while loading tracks. Not retrying. | Status code: {response.status}')
+        __log__.error(f'LOADTRACKS | Non-200 status code error while loading tracks. All 5 retries used.| Status code: {response.status}')
         raise TrackLoadError('Non-200 status code error while loading tracks.', data={'status_code': response.status})
+
+    async def decode_track(self, *, track_id: str, retry: bool = True, raw: bool = False) -> Optional[Union[Track, Dict]]:
+
+        backoff = ExponentialBackoff(base=1)
+
+        for _ in range(5):
+
+            async with self.client.session.get(url=f'{self.http_url}/decodetrack', headers={'Authorization': self.password}, params={'track': track_id}) as response:
+
+                if response.status != 200:
+
+                    if retry:
+                        time = backoff.delay()
+                        __log__.warning(f'DECODETRACKS | Non-200 status code while decoding tracks. Retrying in {time}s. | Status code: {response.status}')
+                        await asyncio.sleep(backoff.delay())
+                        continue
+                    else:
+                        __log__.error(f'DECODETRACKS | Non-200 status code error while decoding tracks. Not retrying. | Status code: {response.status}')
+                        raise TrackLoadError('Non-200 status code error while decoding tracks.', data={'status_code': response.status})
+
+                data = await response.json()
+
+            if raw:
+                return data
+
+            return Track(track_id=track_id, track_info=data)
+
+        __log__.error(f'DECODETRACKS | Non-200 status code error while decoding tracks. All 5 retries used. | Status code: {response.status}')
+        raise TrackLoadError('Non-200 status code error while decoding tracks.', data={'status_code': response.status})
+
+
