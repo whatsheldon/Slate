@@ -257,7 +257,7 @@ class Track:
         return self._track_id
 
     @property
-    def ctx(self) -> Optional[commands.Context]:
+    def ctx(self) -> Optional[Protocol[commands.Context]]:
         return self._ctx
 
     @property
