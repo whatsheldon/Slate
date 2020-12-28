@@ -244,8 +244,7 @@ class BaseNode(abc.ABC):
 
         for _ in range(5):
 
-            params = {'identifier': urllib.parse.quote(query)}
-            async with self.client.session.get(url=f'{self.http_url}/loadtracks', headers={'Authorization': self.password}, params=params) as response:
+            async with self.client.session.get(url=f'{self.http_url}/loadtracks?identifier={urllib.parse.quote(query)}', headers={'Authorization': self.password}) as response:
 
                 if response.status != 200:
                     if retry:
