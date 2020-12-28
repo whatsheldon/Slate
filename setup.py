@@ -1,11 +1,16 @@
+import os
+import re
+
 import setuptools
-from slate import __version__
 
 with open('README.md', 'r') as file:
-    long_description = file.read()
+    LONG_DESCRIPTION = file.read()
 
-with open("requirements.txt") as file:
-    install_requires = file.read().splitlines()
+with open('requirements.txt') as file:
+    INSTALL_REQUIRES = file.read().splitlines()
+
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'slate/__init__.py'))) as f:
+    VERSION = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)
 
 
 classifiers = [
@@ -35,9 +40,9 @@ project_urls = {
 
 setuptools.setup(
     name='Slate',
-    version=__version__,
+    version=VERSION,
     description='A Lavalink and Andesite wrapper.',
-    long_description=long_description,
+    long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     author='Axelancerr',
     author_email=None,
@@ -45,7 +50,7 @@ setuptools.setup(
     packages=['slate'],
     classifiers=classifiers,
     license='MIT',
-    install_requires=install_requires,
+    install_requires=INSTALL_REQUIRES,
     python_requires=">=3.8",
     project_urls=project_urls,
 )
