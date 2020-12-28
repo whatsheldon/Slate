@@ -8,6 +8,7 @@ import urllib.parse
 from typing import Dict, List, Optional, Protocol, TYPE_CHECKING, Union
 
 import aiohttp
+from discord.ext import commands
 
 from .objects import Track, Playlist
 from .backoff import ExponentialBackoff
@@ -211,7 +212,7 @@ class BaseNode(abc.ABC):
 
     #
 
-    async def search(self, *, query: str, retry: bool = True, raw: bool = False) -> Optional[Union[Playlist, List[Track], Dict]]:
+    async def search(self, *, query: str, ctx: Protocol[commands.Context] = None, retry: bool = True, raw: bool = False) -> Optional[Union[Playlist, List[Track], Dict]]:
         """
         Searches for and returns a list of :py:class:`Track`'s or a :py:class:`Playlist`.
 
@@ -219,6 +220,8 @@ class BaseNode(abc.ABC):
         ----------
         query: str
             The query to search with. Could be a link or a search term if prepended with "scsearch:" (Soundcloud) or "ytsearch:" (Youtube).
+        ctx: :py:class:`typing.Protocol` [ :py:class:`commands.Context`]
+            An optional context argument to pass to the track for quality of life features such as :py:attr:`Track.requester`.
         retry: :py:class:`typing.Optional` [ :py:class:`bool` ]
             Whether or not to retry the search if a non-200 status code is received. If :py:class:`True` the search will be retried upto 5 times, with an exponential backoff between each time.
         raw: :py:class:`typing.Optional` [ :py:class:`bool` ]
@@ -271,16 +274,16 @@ class BaseNode(abc.ABC):
 
             elif load_type == 'PLAYLIST_LOADED':
                 __log__.debug(f'LOADTRACKS | Playlist loaded for query: {query} | Name: {data.get("playlistInfo", {}).get("name", "UNKNOWN")}')
-                return Playlist(playlist_info=data.get('playlistInfo'), tracks=data.get('tracks'))
+                return Playlist(playlist_info=data.get('playlistInfo'), tracks=data.get('tracks'), ctx=ctx)
 
             elif load_type in ['SEARCH_RESULT', 'TRACK_LOADED']:
                 __log__.debug(f'LOADTRACKS | Tracks loaded for query: {query} | Amount: {len(data.get("tracks"))}')
-                return [Track(track_id=track.get('track'), track_info=track.get('info')) for track in data.get('tracks')]
+                return [Track(track_id=track.get('track'), track_info=track.get('info'), ctx=ctx) for track in data.get('tracks')]
 
         __log__.error(f'LOADTRACKS | Non-200 status code error while loading tracks. All 5 retries used.| Status code: {response.status}')
         raise TrackLoadError('Non-200 status code error while loading tracks.', data={'status_code': response.status})
 
-    async def decode_track(self, *, track_id: str, retry: bool = True, raw: bool = False) -> Optional[Union[Track, Dict]]:
+    async def decode_track(self, *, track_id: str, ctx: Protocol[commands.Context] = None, retry: bool = True, raw: bool = False) -> Optional[Union[Track, Dict]]:
 
         backoff = ExponentialBackoff(base=1)
 
@@ -304,7 +307,7 @@ class BaseNode(abc.ABC):
             if raw:
                 return data
 
-            return Track(track_id=track_id, track_info=data.get('info', None) or data)
+            return Track(track_id=track_id, track_info=data.get('info', None) or data, ctx=ctx)
 
         __log__.error(f'DECODETRACKS | Non-200 status code error while decoding tracks. All 5 retries used. | Status code: {response.status}')
         raise TrackDecodeError('Non-200 status code error while decoding tracks.', data={'status_code': response.status})

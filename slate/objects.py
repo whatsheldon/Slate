@@ -1,7 +1,10 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Protocol, TYPE_CHECKING
+from typing import Dict, List, Optional, Protocol, TYPE_CHECKING, Union
+
+import discord
+from discord.ext import commands
 
 if TYPE_CHECKING:
     from .player import Player
@@ -221,12 +224,13 @@ class WebSocketClosedEvent:
 
 class Track:
 
-    __slots__ = ('_track_id', '_track_info', '_class', '_title', '_author', '_length', '_identifier', '_uri', '_is_stream', '_is_seekable', '_position')
+    __slots__ = ('_track_id', '_track_info', '_ctx', '_class', '_title', '_author', '_length', '_identifier', '_uri', '_is_stream', '_is_seekable', '_position', '_requester')
 
-    def __init__(self, *, track_id: str, track_info: dict) -> None:
+    def __init__(self, *, track_id: str, track_info: dict, ctx: Protocol[commands.Context] = None) -> None:
 
         self._track_id = track_id
         self._track_info = track_info
+        self._ctx = ctx
 
         self._class = track_info.get('class', 'UNKNOWN')
 
@@ -239,6 +243,10 @@ class Track:
         self._is_seekable = track_info.get('isSeekable')
         self._position = track_info.get('position')
 
+        self._requester = None
+        if ctx:
+            self._requester = ctx.author
+
     def __repr__(self) -> str:
         return f'<slate.Track title=\'{self._title}\' uri=\'<{self._uri}>\' source=\'{self.source}\' length={self._length}>'
 
@@ -247,6 +255,10 @@ class Track:
     @property
     def track_id(self) -> str:
         return self._track_id
+
+    @property
+    def ctx(self) -> Optional[commands.Context]:
+        return self._ctx
 
     @property
     def title(self) -> str:
@@ -280,6 +292,10 @@ class Track:
     def position(self) -> int:
         return self._position
 
+    @property
+    def requester(self) -> Optional[Union[discord.Member, discord.User]]:
+        return self._requester
+
     #
 
     @property
@@ -305,18 +321,18 @@ class Track:
 
 class Playlist:
 
-    __slots__ = ('_playlist_info', '_raw_tracks', '_tracks', '_name', '_selected_track')
+    __slots__ = ('_playlist_info', '_raw_tracks', '_ctx', '_tracks', '_name', '_selected_track')
 
-    def __init__(self, *, playlist_info: dict, tracks: List[Dict]) -> None:
+    def __init__(self, *, playlist_info: dict, tracks: List[Dict], ctx: Protocol[commands.Context] = None) -> None:
 
         self._playlist_info = playlist_info
+        self._raw_tracks = tracks
+        self._ctx = ctx
+
+        self._tracks = [Track(track_id=track.get('track'), track_info=track.get('info'), ctx=ctx) for track in self._raw_tracks]
 
         self._name = self._playlist_info.get('name')
         self._selected_track = self._playlist_info.get('selectedTrack')
-
-        self._raw_tracks = tracks
-
-        self._tracks = [Track(track_id=track.get('track'), track_info=track.get('info')) for track in self._raw_tracks]
 
     def __repr__(self) -> str:
         return f'<slate.Playlist name=\'{self._name}\' selected_track={self.selected_track} track_count={len(self._tracks)}>'
