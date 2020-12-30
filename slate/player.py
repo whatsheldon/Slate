@@ -46,7 +46,7 @@ class Player(VoiceProtocol, ABC):
     @property
     def guild(self) -> Optional[discord.Guild]:
         """:py:class:`typing.Optional` [ `:py:class:`discord.Guild` ]: The guild that this :py:class:`Player` is connected to."""
-        return self.channel.guild
+        return getattr(self.channel, 'guild', None)
 
     @property
     def node(self) -> Protocol[BaseNode]:
