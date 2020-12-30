@@ -131,19 +131,18 @@ class AndesiteNode(BaseNode):
                 raise NodeConnectionClosed(f'Node \'{self.identifier}\' websocket has been closed. Reason: {message.extra}')
 
             message = message.json()
-            __log__.debug(f'WEBSOCKET | Node \'{self.identifier}\' received payload. | {message}')
 
             op = message.get('op', None)
             if not op:
                 __log__.warning(f'WEBSOCKET | Node \'{self.identifier}\' received payload with no op code. | Payload: {message}')
                 continue
 
+            __log__.debug(f'WEBSOCKET | Node \'{self.identifier}\' received payload with op \'{op}\'. | Payload: {message}')
             await self._handle_message(message=message)
 
     async def _handle_message(self, message: dict) -> None:
 
         op = message['op']
-        __log__.debug(f'WEBSOCKET | Node \'{self.identifier}\' received payload with op \'{op}\'. | Payload: {message}')
 
         if op == 'metadata':  # Andesite-mode only event.
             self._metadata = Metadata(data=message.get('data'))

@@ -25,10 +25,8 @@ class Player(VoiceProtocol, ABC):
         self.bot: Protocol[discord.Client] = bot
 
         self.channel: discord.VoiceChannel = channel
-        self._guild: discord.Guild = channel.guild
 
         self._node: Optional[Protocol[BaseNode]] = None
-
         self._current: Optional[objects.Track] = None
         self._filter: Optional[filters.Filter] = None
         self._volume: int = 100
@@ -46,9 +44,9 @@ class Player(VoiceProtocol, ABC):
     #
 
     @property
-    def guild(self) -> discord.Guild:
-        """:py:class:`discord.Guild`: The guild that this :py:class:`Player` is connected to."""
-        return self._guild
+    def guild(self) -> Optional[discord.Guild]:
+        """:py:class:`typing.Optional` [ `:py:class:`discord.Guild` ]: The guild that this :py:class:`Player` is connected to."""
+        return self.channel.guild
 
     @property
     def node(self) -> Protocol[BaseNode]:
