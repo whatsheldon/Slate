@@ -22,8 +22,7 @@ class Player(VoiceProtocol, ABC):
         super().__init__(bot, channel)
 
         self.client: Protocol[discord.Client] = bot
-        self.bot: Protocol[discord.Client] = bot
-
+        self._bot: Protocol[discord.Client] = bot
         self.channel: discord.VoiceChannel = channel
 
         self._node: Optional[Protocol[BaseNode]] = None
@@ -42,6 +41,10 @@ class Player(VoiceProtocol, ABC):
         return f'<slate.Player node={self.node!r} guild={self.guild!r} channel={self.channel!r} is_connected={self.is_connected} is_playing={self.is_playing}>'
 
     #
+
+    @property
+    def bot(self) -> Protocol[discord.Client]:
+        return self._bot
 
     @property
     def guild(self) -> Optional[discord.Guild]:

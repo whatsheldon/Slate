@@ -13,7 +13,7 @@ class Queue:
         self._looping = False
 
     def __repr__(self) -> str:
-        return f'<slate.Queue length={len(self._queue)} history_length={len(self._queue_history)}>'
+        return f'<slate.Queue length={len(list(self.queue))} history_length={len(list(self.history))}>'
 
     def __len__(self) -> int:
         return len(self._queue)

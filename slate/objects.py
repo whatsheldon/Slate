@@ -316,6 +316,9 @@ class Track:
         if self.source == 'Youtube':
             return f'https://img.youtube.com/vi/{self.identifier}/mqdefault.jpg'
 
+        if (thumbnail := self._track_info.get('thumbnail', None)) is None:
+            return thumbnail
+
         return f'https://dummyimage.com/1280x720/000/fff.png&text=+'
 
 
