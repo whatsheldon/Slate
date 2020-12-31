@@ -191,7 +191,7 @@ class Client:
         if channel.guild.id in self.players.keys():
             raise PlayerAlreadyExists(f'Player for guild \'{channel.guild!r}\' already exists.')
 
-        __log__.debug(f'Player | Attempting player creation for guild: {channel.guild!r}')
+        __log__.debug(f'PLAYER | Attempting player creation for guild: {channel.guild!r}')
 
         player = await channel.connect(cls=cls)
         player._node = node

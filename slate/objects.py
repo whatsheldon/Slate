@@ -304,7 +304,7 @@ class Track:
         if not self.uri:
             return 'UNKNOWN'
 
-        for source in ['bandcamp', 'beam', 'soundcloud', 'twitch', 'vimeo', 'youtube']:
+        for source in ['bandcamp', 'beam', 'soundcloud', 'twitch', 'vimeo', 'youtube', 'spotify']:
             if source in self.uri:
                 return source.title()
 
