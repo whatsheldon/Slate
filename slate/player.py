@@ -182,8 +182,9 @@ class Player(VoiceProtocol, ABC):
             return
 
         await self.node._send(op='stop', guildId=str(self.guild.id))
-        self._current = None
         __log__.info(f'PLAYER | Player for guild {self.guild!r} ended the current track.')
+
+        self._current = None
 
     async def destroy(self) -> None:
 
@@ -193,8 +194,8 @@ class Player(VoiceProtocol, ABC):
             await self.stop()
             await self.node._send(op='destroy', guildId=str(self.guild.id))
 
-        __log__.info(f'PLAYER | Player for guild {self.guild!r} was destroyed.')
         del self.node.players[self.guild.id]
+        __log__.info(f'PLAYER | Player for guild {self.guild!r} was destroyed.')
 
     async def play(self, *, track: objects.Track, start: int = 0, end: int = 0, volume: int = None, no_replace: bool = False, pause: bool = False) -> None:
 

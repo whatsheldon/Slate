@@ -11,6 +11,7 @@ class Queue:
         self._queue_history = []
 
         self._looping = False
+        self._looping_current = False
 
     def __repr__(self) -> str:
         return f'<slate.Queue length={len(list(self.queue))} history_length={len(list(self.history))}>'
@@ -55,6 +56,10 @@ class Queue:
     @property
     def is_looping(self) -> bool:
         return self._looping
+
+    @property
+    def is_looping_current(self) -> bool:
+        return self._looping_current
 
     @property
     def is_empty(self) -> bool:
@@ -133,3 +138,12 @@ class Queue:
 
     def clear_history(self) -> None:
         self._queue_history.clear()
+
+    def set_looping(self, *, looping: bool, current: bool = False):
+
+        if current:
+            self._looping_current = looping
+            self._looping = False
+        else:
+            self._looping = looping
+            self._looping_current = False
