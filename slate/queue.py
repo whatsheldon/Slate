@@ -142,8 +142,12 @@ class Queue:
     def set_looping(self, *, looping: bool, current: bool = False):
 
         if current:
-            self._looping_current = looping
-            self._looping = False
+            if looping:
+                self._looping_current = True
+                self._looping = True
+            else:
+                self._looping_current = False
+                self._looping = False
         else:
             self._looping = looping
             self._looping_current = False
