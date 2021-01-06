@@ -51,6 +51,6 @@ setuptools.setup(
     classifiers=classifiers,
     license='MIT',
     install_requires=INSTALL_REQUIRES,
-    python_requires=">=3.8",
+    python_requires=">=3.7",
     project_urls=project_urls,
 )
